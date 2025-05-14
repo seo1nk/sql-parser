@@ -1,0 +1,18 @@
+[package]
+name = "sql-visualizer"
+version = "0.1.0"
+edition = "2024"
+default-run = "main"
+
+[workspace]
+members = ["shared", "tokenizer", "basic-parser"]
+
+[workspace.dependencies]
+shared = { path = "./shared" }
+basic-parser = { path = "./basic-parser" }
+tokenizer = { path = "./tokenizer" }
+
+[dependencies]
+shared.workspace = true
+tokenizer.workspace = true
+basic-parser.workspace = true
