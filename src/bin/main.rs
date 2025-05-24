@@ -1,4 +1,4 @@
-use basic_parser::basic_parser::{char, digit, string};
+use basic_parser::basic::{char, digit, string};
 
 fn main() {
     println!("Hello, world!");

@@ -1,15 +1,34 @@
 use kernel::parser::{Applicative, Functor, Parser};
 use kernel::satisfy::satisfy;
 
-/// satisfy を用いて、期待する文字と等しいかを確認する述語関数を部分適用した Char パーサーを返す
+/// 期待する文字と等しいかを確認する述語関数を部分適用した Char パーサー
 pub fn char(expected: char) -> Parser<char> {
     satisfy(move |c| c == expected)
 }
 
-/// satisfy を用いて、先頭文字が数字かどうかをチェックし、
-/// 数字であれば digitToInt 的な処理（ここでは to_digit(10)）で整数に変換するパーサー
+/// 先頭文字が数字かどうかをチェックし、整数に変換する digit パーサー
 pub fn digit() -> Parser<i32> {
     satisfy(|c| c.is_ascii_digit()).map(|c| c.to_digit(10).unwrap() as i32)
+}
+
+/// アンダースコアをパースするパーサー
+pub fn underscore() -> Parser<char> {
+    char('_')
+}
+
+/// 空白文字（スペース、タブ、改行）をスキップするパーサー
+pub fn whitespace() -> Parser<()> {
+    satisfy(|c| c.is_whitespace()).map(|_| ())
+}
+
+/// アルファベットの文字をパースするパーサー
+pub fn alphabet() -> Parser<char> {
+    satisfy(|c| c.is_alphabetic())
+}
+
+/// アルファベットまたは数字の文字をパースするパーサー
+pub fn alphanumeric() -> Parser<char> {
+    satisfy(|c| c.is_alphanumeric())
 }
 
 /// 指定された文字列と完全一致するかチェックするパーサー
