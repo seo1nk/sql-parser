@@ -2,8 +2,8 @@
 /// 成功した場合は、(パース済みの値, 残りの文字列) を返す
 pub type ParseResult<T> = Option<(T, String)>;
 
-/// 入力文字列を受け取って、ParseResultを返すパーサーの型エイリアス
-/// 環境をキャプチャしない純粋な関数にのみ適用できる型
+// / 入力文字列を受け取って、ParseResultを返すパーサーの型エイリアス
+// / 環境をキャプチャしない純粋な関数にのみ適用できる型
 // type Parser<T> = fn(String) -> ParseResult<T>;
 
 /// 入力文字列を受け取って、`ParseResult` を返すパーサーの型エイリアス  

@@ -9,7 +9,7 @@ pub fn char(expected: char) -> Parser<char> {
 /// satisfy を用いて、先頭文字が数字かどうかをチェックし、
 /// 数字であれば digitToInt 的な処理（ここでは to_digit(10)）で整数に変換するパーサー
 pub fn digit() -> Parser<i32> {
-    satisfy(|c| c.is_digit(10)).map(|c| c.to_digit(10).unwrap() as i32)
+    satisfy(|c| c.is_ascii_digit()).map(|c| c.to_digit(10).unwrap() as i32)
 }
 
 /// 指定された文字列と完全一致するかチェックするパーサー
