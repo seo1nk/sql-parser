@@ -1,9 +1,16 @@
-use kernel::parser::Parser;
+use kernel::parser::{Functor, Parser};
+
+use crate::sql_token::Token;
+
+/// SQL識別子トークンを生成
+pub fn sql_identifier() -> Parser<Token> {
+    identifier().map(Token::Identifier)
+}
 
 /// 入力文字列の先頭からSQL標準準拠の識別子を認識するパーサー
 /// - 成功: Some (識別子, 残り)
 /// - 失敗: None（空文字列、無効な開始文字などを含む文字列）
-pub fn identifier() -> Parser<String> {
+fn identifier() -> Parser<String> {
     Parser(Box::new(|input: String| {
         // UTF-8に対応した `(バイト位置, 文字)` を返す
         let mut chars = input.char_indices();

@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::OnceLock};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Keyword(SqlKeyword),
-    Identifier(SqlIdentifier),
+    Identifier(String),
     Value(SqlValue),
 
     // =, <>, !=, <, >, <=, >=, +, -, *, /
@@ -76,12 +76,6 @@ pub enum SqlValue {
     String(String), // 'hello world'
     Boolean(bool),  // TRUE, FALSE
     Null,           // NULL
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum SqlIdentifier {
-    Unquoted(String), // table_name
-    Quoted(String),   // `table_name`
 }
 
 /// 文字列とSQLのキーワードのMapを返す

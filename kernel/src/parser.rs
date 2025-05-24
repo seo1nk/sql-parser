@@ -2,10 +2,6 @@
 /// 成功した場合は、(パース済みの値, 残りの文字列) を返す
 pub type ParseResult<T> = Option<(T, String)>;
 
-// / 入力文字列を受け取って、ParseResultを返すパーサーの型エイリアス
-// / 環境をキャプチャしない純粋な関数にのみ適用できる型
-// type Parser<T> = fn(String) -> ParseResult<T>;
-
 /// 入力文字列を受け取って、`ParseResult` を返すパーサーの型エイリアス  
 /// `Box<dyn Fn(String) -> ParseResult<T>>` とすることで、環境をキャプチャするクロージャも扱えるようにする  
 /// `type Parser<T> = Box<dyn Fn(String) -> ParseResult<T>>` を型でラップする
@@ -32,22 +28,6 @@ pub trait Functor {
         Self: Sized;
 }
 
-impl<T> Functor for Parser<T>
-where
-    T: 'static,
-{
-    type Output = T;
-    fn map<F, B>(self, f: F) -> Parser<B>
-    where
-        F: Fn(T) -> B + 'static,
-    {
-        Parser(Box::new(move |input: String| {
-            // 元のパーサーを実行して、結果に関数 T->B を適用
-            self.run(input).map(|(a, rest)| (f(a), rest))
-        }))
-    }
-}
-
 /// Haskell の <*> の型  
 /// Applicative を実装するには　Functor を実装している必要がある
 pub trait Applicative: Functor {
@@ -65,6 +45,40 @@ pub trait Applicative: Functor {
     where
         F: Fn(Self::Output) -> B + 'static,
         Self: Sized;
+}
+
+/// Haskell の <|>
+pub trait Alternative: Applicative {
+    /// 常に失敗するパーサー（Haskellの empty に相当）
+    fn empty() -> Self;
+    /// 左が失敗したら右を試す
+    /// (<|>) :: f a -> f a -> f a
+    fn alt(self, other: Self) -> Self;
+}
+
+/// Haskellの `$>`
+pub trait RightFunctor: Functor {
+    /// 左の結果を無視して右の結果を返す
+    fn replace_with<U>(self, value: U) -> Parser<U>
+    where
+        U: Clone + 'static,
+        Self: Sized;
+}
+
+impl<T> Functor for Parser<T>
+where
+    T: 'static,
+{
+    type Output = T;
+    fn map<F, B>(self, f: F) -> Parser<B>
+    where
+        F: Fn(T) -> B + 'static,
+    {
+        Parser(Box::new(move |input: String| {
+            // 元のパーサーを実行して、結果に関数 T->B を適用
+            self.run(input).map(|(a, rest)| (f(a), rest))
+        }))
+    }
 }
 
 impl<T> Applicative for Parser<T>
@@ -86,5 +100,33 @@ where
         };
         // 「関数 f を値 a に適用した結果 f(a)」を返すパーサー（Parser<B>）
         Parser(Box::new(parse))
+    }
+}
+
+impl<T> Alternative for Parser<T>
+where
+    T: Clone + 'static,
+{
+    fn empty() -> Self {
+        Parser(Box::new(|_| None))
+    }
+
+    fn alt(self, other: Self) -> Self {
+        Parser(Box::new(move |input| match self.run(input.clone()) {
+            Some(result) => Some(result),
+            None => other.run(input),
+        }))
+    }
+}
+
+impl<T> RightFunctor for Parser<T>
+where
+    T: 'static,
+{
+    fn replace_with<U>(self, value: U) -> Parser<U>
+    where
+        U: Clone + 'static,
+    {
+        self.map(move |_| value.clone())
     }
 }
