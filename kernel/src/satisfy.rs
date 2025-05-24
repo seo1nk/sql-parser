@@ -1,4 +1,4 @@
-use crate::parser_type::Parser;
+use crate::parser::Parser;
 
 /// 与えられた述語関数を用いて、入力の先頭文字がその関数を満たすかをチェックするパーサーを返す
 pub fn satisfy<P>(predicate: P) -> Parser<char>

@@ -1,5 +1,5 @@
-use shared::parser_type::{Applicative, Functor, Parser};
-use shared::satisfy::satisfy;
+use kernel::parser::{Applicative, Functor, Parser};
+use kernel::satisfy::satisfy;
 
 /// satisfy を用いて、期待する文字と等しいかを確認する述語関数を部分適用した Char パーサーを返す
 pub fn char(expected: char) -> Parser<char> {
