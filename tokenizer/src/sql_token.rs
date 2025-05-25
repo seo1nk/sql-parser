@@ -1,5 +1,3 @@
-use std::{collections::HashMap, sync::OnceLock};
-
 /// SQLのトークン
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
@@ -78,61 +76,40 @@ pub enum SqlValue {
     Null,           // NULL
 }
 
-/// 文字列とSQLのキーワードのMapを返す
-pub fn get_select_keyword_map() -> &'static HashMap<String, SqlKeyword> {
-    SELECT_KEYWORD_MAP.get_or_init(create_select_keyword_map)
+/// 文字列からSQLキーワードに変換する
+/// 大文字・小文字を区別しない
+pub fn get_sql_keyword(word: &str) -> Option<SqlKeyword> {
+    match word.to_uppercase().as_str() {
+        "SELECT" => Some(SqlKeyword::Select),
+        "FROM" => Some(SqlKeyword::From),
+        "WHERE" => Some(SqlKeyword::Where),
+        "AND" => Some(SqlKeyword::And),
+        "OR" => Some(SqlKeyword::Or),
+        "NOT" => Some(SqlKeyword::Not),
+        "JOIN" => Some(SqlKeyword::Join),
+        "LEFT" => Some(SqlKeyword::Left),
+        "RIGHT" => Some(SqlKeyword::Right),
+        "INNER" => Some(SqlKeyword::Inner),
+        "OUTER" => Some(SqlKeyword::Outer),
+        "ON" => Some(SqlKeyword::On),
+        "GROUP" => Some(SqlKeyword::Group),
+        "BY" => Some(SqlKeyword::By),
+        "HAVING" => Some(SqlKeyword::Having),
+        "ORDER" => Some(SqlKeyword::Order),
+        "DISTINCT" => Some(SqlKeyword::Distinct),
+        "AS" => Some(SqlKeyword::As),
+        "IN" => Some(SqlKeyword::In),
+        "LIKE" => Some(SqlKeyword::Like),
+        "BETWEEN" => Some(SqlKeyword::Between),
+        "IS" => Some(SqlKeyword::Is),
+        "EXISTS" => Some(SqlKeyword::Exists),
+        "LIMIT" => Some(SqlKeyword::Limit),
+        "OFFSET" => Some(SqlKeyword::Offset),
+        "UNION" => Some(SqlKeyword::Union),
+        "INTERSECT" => Some(SqlKeyword::Intersect),
+        "EXCEPT" => Some(SqlKeyword::Except),
+        "ASC" => Some(SqlKeyword::Asc),
+        "DESC" => Some(SqlKeyword::Desc),
+        _ => None,
+    }
 }
-
-fn create_select_keyword_map() -> HashMap<String, SqlKeyword> {
-    let mut map = HashMap::new();
-
-    // SELECT文の基本構造
-    map.insert("SELECT".to_string(), SqlKeyword::Select);
-    map.insert("FROM".to_string(), SqlKeyword::From);
-    map.insert("WHERE".to_string(), SqlKeyword::Where);
-
-    // 論理演算
-    map.insert("AND".to_string(), SqlKeyword::And);
-    map.insert("OR".to_string(), SqlKeyword::Or);
-    map.insert("NOT".to_string(), SqlKeyword::Not);
-
-    // 結合
-    map.insert("JOIN".to_string(), SqlKeyword::Join);
-    map.insert("LEFT".to_string(), SqlKeyword::Left);
-    map.insert("RIGHT".to_string(), SqlKeyword::Right);
-    map.insert("INNER".to_string(), SqlKeyword::Inner);
-    map.insert("OUTER".to_string(), SqlKeyword::Outer);
-    map.insert("ON".to_string(), SqlKeyword::On);
-
-    // 集約・ソート
-    map.insert("GROUP".to_string(), SqlKeyword::Group);
-    map.insert("BY".to_string(), SqlKeyword::By);
-    map.insert("HAVING".to_string(), SqlKeyword::Having);
-    map.insert("ORDER".to_string(), SqlKeyword::Order);
-    map.insert("DISTINCT".to_string(), SqlKeyword::Distinct);
-
-    // その他
-    map.insert("AS".to_string(), SqlKeyword::As);
-    map.insert("IN".to_string(), SqlKeyword::In);
-    map.insert("LIKE".to_string(), SqlKeyword::Like);
-    map.insert("BETWEEN".to_string(), SqlKeyword::Between);
-    map.insert("IS".to_string(), SqlKeyword::Is);
-    map.insert("EXISTS".to_string(), SqlKeyword::Exists);
-
-    // 制限・オフセット
-    map.insert("LIMIT".to_string(), SqlKeyword::Limit);
-    map.insert("OFFSET".to_string(), SqlKeyword::Offset);
-
-    // 集合演算
-    map.insert("UNION".to_string(), SqlKeyword::Union);
-    map.insert("INTERSECT".to_string(), SqlKeyword::Intersect);
-    map.insert("EXCEPT".to_string(), SqlKeyword::Except);
-
-    // ソート方向
-    map.insert("ASC".to_string(), SqlKeyword::Asc);
-    map.insert("DESC".to_string(), SqlKeyword::Desc);
-
-    map
-}
-
-static SELECT_KEYWORD_MAP: OnceLock<HashMap<String, SqlKeyword>> = OnceLock::new();
