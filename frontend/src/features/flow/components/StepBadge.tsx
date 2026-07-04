@@ -13,10 +13,10 @@ export function StepBadge({
       <Tooltip.Trigger
         render={
           <span
-            className={`absolute -top-[11px] -right-[11px] flex size-[22px] items-center justify-center rounded-full border bg-pane-muted text-xs transition-colors duration-300 ${
+            className={`absolute -top-[12px] -right-[12px] flex size-[24px] items-center justify-center rounded-full border-2 bg-node text-xs font-bold transition-colors duration-300 ${
               highlighted
-                ? 'border-accent text-accent'
-                : 'border-pane-border text-fg-muted'
+                ? 'border-accent text-accent-ink'
+                : 'border-pane-border text-ink-muted'
             }`}
           >
             {no}
@@ -25,7 +25,7 @@ export function StepBadge({
       />
       <Tooltip.Portal>
         <Tooltip.Positioner sideOffset={8}>
-          <Tooltip.Popup className="rounded-md border border-pane-border bg-pane-muted px-2.5 py-1 text-xs text-fg-muted shadow-lg">
+          <Tooltip.Popup className="rounded-xl border-2 border-pane-border bg-node px-2.5 py-1 text-xs font-medium text-ink-muted shadow-[0_4px_14px_rgba(74,59,68,0.12)]">
             論理実行順 {no}
           </Tooltip.Popup>
         </Tooltip.Positioner>

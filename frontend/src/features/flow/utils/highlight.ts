@@ -57,9 +57,9 @@ export function highlightEdges(
       zIndex: on ? 1 : 0,
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 14,
-        height: 14,
-        color: on ? '#1ded83' : '#4a4f51',
+        width: 12,
+        height: 12,
+        color: on ? '#ff7dae' : '#dbc7d2',
       },
     }
   })

@@ -3,13 +3,17 @@ import type { TableRfNode } from '../types'
 import { StepBadge } from './StepBadge'
 
 const KIND_STYLE = {
-  scan: { badge: 'SCAN', badgeBg: 'bg-step-scan', head: 'text-[#9ce8ee]' },
-  cte: { badge: 'CTE', badgeBg: 'bg-step-scan', head: 'text-[#9ce8ee]' },
-  joined: { badge: 'JOINED', badgeBg: 'bg-step-join', head: 'text-[#dfb8ff]' },
+  scan: { badge: 'SCAN', chip: 'bg-scan-soft text-scan-ink', head: 'text-scan-ink' },
+  cte: { badge: 'CTE', chip: 'bg-scan-soft text-scan-ink', head: 'text-scan-ink' },
+  joined: {
+    badge: 'JOINED',
+    chip: 'bg-join-soft text-join-ink',
+    head: 'text-join-ink',
+  },
   result: {
     badge: 'PROJECT',
-    badgeBg: 'bg-step-project',
-    head: 'text-[#8ef7c0]',
+    chip: 'bg-project-soft text-project-ink',
+    head: 'text-project-ink',
   },
 } as const
 
@@ -18,10 +22,10 @@ export function TableNode({ data }: NodeProps<TableRfNode>) {
   const style = KIND_STYLE[data.kind]
   return (
     <div
-      className={`relative min-w-[208px] rounded-md border bg-node shadow-[0_0_20px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 ease-out ${
+      className={`relative min-w-[208px] rounded-2xl border-2 bg-node transition-[border-color,box-shadow] duration-300 ease-out ${
         data.isHighlighted
-          ? 'border-accent shadow-[0_0_20px_rgba(29,237,131,0.4)]'
-          : 'border-node-border'
+          ? 'border-accent shadow-[0_6px_20px_rgba(255,125,174,0.35)]'
+          : 'border-node-border shadow-[0_4px_14px_rgba(74,59,68,0.08)]'
       }`}
     >
       {data.stepNo && (
@@ -29,16 +33,16 @@ export function TableNode({ data }: NodeProps<TableRfNode>) {
       )}
       <Handle type="target" position={Position.Left} />
       <div
-        className={`flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[13px] font-semibold ${style.head}`}
+        className={`flex items-center gap-2 border-b border-pane-border px-3 py-2 text-[13px] font-bold ${style.head}`}
       >
         <span
-          className={`rounded-[3px] px-1.5 py-0.5 text-[9.5px] font-bold tracking-[0.1em] text-[#0c0d0d] ${style.badgeBg}`}
+          className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold tracking-[0.1em] ${style.chip}`}
         >
           {style.badge}
         </span>
         <span>{data.title}</span>
         {data.joinType && (
-          <span className="ml-auto pl-2 text-[10px] font-normal text-fg-dim">
+          <span className="ml-auto pl-2 text-[10px] font-medium text-ink-dim">
             {data.joinType}
           </span>
         )}
@@ -48,20 +52,22 @@ export function TableNode({ data }: NodeProps<TableRfNode>) {
           <li
             key={column.name}
             className={`flex items-center gap-2 px-3 py-[3px] ${
-              column.role === 'output' ? 'text-accent' : 'text-fg-muted'
+              column.role === 'output'
+                ? 'font-semibold text-accent-ink'
+                : 'text-ink-muted'
             }`}
           >
             <span
-              className={`size-[5px] shrink-0 rounded-full ${
-                column.role === 'output' ? 'bg-accent' : 'bg-fg-dim'
+              className={`size-[6px] shrink-0 rounded-full ${
+                column.role === 'output' ? 'bg-accent' : 'bg-ink-dim'
               }`}
             />
             {column.name}
           </li>
         ))}
         {data.hasMore && (
-          <li className="flex items-center gap-2 px-3 py-[3px] tracking-[0.15em] text-fg-dim opacity-55">
-            <span className="size-[5px] shrink-0" />…
+          <li className="flex items-center gap-2 px-3 py-[3px] tracking-[0.15em] text-ink-dim">
+            <span className="size-[6px] shrink-0" />…
           </li>
         )}
       </ul>

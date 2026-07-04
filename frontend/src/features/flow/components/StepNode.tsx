@@ -3,12 +3,20 @@ import type { StepRfNode } from '../types'
 import { StepBadge } from './StepBadge'
 
 const KIND_STYLE = {
-  filter: { badge: 'FILTER', badgeBg: 'bg-step-filter', head: 'text-[#ffd77e]' },
-  group: { badge: 'GROUP', badgeBg: 'bg-step-group', head: 'text-[#a9bcf5]' },
+  filter: {
+    badge: 'FILTER',
+    chip: 'bg-filter-soft text-filter-ink',
+    head: 'text-filter-ink',
+  },
+  group: {
+    badge: 'GROUP',
+    chip: 'bg-group-soft text-group-ink',
+    head: 'text-group-ink',
+  },
   project: {
     badge: 'PROJECT',
-    badgeBg: 'bg-step-project',
-    head: 'text-[#8ef7c0]',
+    chip: 'bg-project-soft text-project-ink',
+    head: 'text-project-ink',
   },
 } as const
 
@@ -17,10 +25,10 @@ export function StepNode({ data }: NodeProps<StepRfNode>) {
   const style = KIND_STYLE[data.kind]
   return (
     <div
-      className={`relative min-w-[190px] rounded-md border bg-node shadow-[0_0_20px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 ease-out ${
+      className={`relative min-w-[190px] rounded-2xl border-2 bg-node transition-[border-color,box-shadow] duration-300 ease-out ${
         data.isHighlighted
-          ? 'border-accent shadow-[0_0_20px_rgba(29,237,131,0.4)]'
-          : 'border-node-border'
+          ? 'border-accent shadow-[0_6px_20px_rgba(255,125,174,0.35)]'
+          : 'border-node-border shadow-[0_4px_14px_rgba(74,59,68,0.08)]'
       }`}
     >
       {data.stepNo && (
@@ -28,16 +36,16 @@ export function StepNode({ data }: NodeProps<StepRfNode>) {
       )}
       <Handle type="target" position={Position.Left} />
       <div
-        className={`flex items-center gap-2 px-3 py-2 text-[13px] font-semibold ${style.head}`}
+        className={`flex items-center gap-2 px-3 py-2 text-[13px] font-bold ${style.head}`}
       >
         <span
-          className={`rounded-[3px] px-1.5 py-0.5 text-[9.5px] font-bold tracking-[0.1em] text-[#0c0d0d] ${style.badgeBg}`}
+          className={`rounded-full px-2 py-0.5 text-[9.5px] font-extrabold tracking-[0.1em] ${style.chip}`}
         >
           {style.badge}
         </span>
         <span>{data.title}</span>
       </div>
-      <div className="px-3 pt-0 pb-2.5 font-mono text-xs text-fg-muted">
+      <div className="px-3 pt-0 pb-2.5 font-mono text-xs text-ink-muted">
         {data.body}
       </div>
       <Handle type="source" position={Position.Right} />

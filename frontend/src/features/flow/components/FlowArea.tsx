@@ -84,7 +84,7 @@ export function FlowArea() {
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="min-h-0 flex-1">
         <ReactFlow
-          colorMode="dark"
+          colorMode="light"
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -103,9 +103,9 @@ export function FlowArea() {
           <Background
             variant={BackgroundVariant.Dots}
             gap={22}
-            size={1}
-            bgColor="#0d0f0f"
-            color="rgba(255,255,255,0.09)"
+            size={1.5}
+            bgColor="#fff7f9"
+            color="#f3d9e1"
           />
         </ReactFlow>
       </div>

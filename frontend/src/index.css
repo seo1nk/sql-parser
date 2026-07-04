@@ -1,26 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=M+PLUS+1+Code:wght@400;600&display=swap');
 @import 'tailwindcss';
 @import '@xyflow/react/dist/style.css';
 
-/* Liam ERD 準拠のデザイントークン(docs/07_ui_design.md) */
+/*
+ * デザイントークン(docs/07_ui_design.md)
+ * コンセプト: kawaii × 見やすい
+ * - ミルキーな明るい背景 + 白ノード + 大きめの角丸
+ * - ステップ種別は「淡い背景色(soft) × 濃い文字色(ink)」のパステルペアで表現
+ * - アクセントはピンク。ハイライトはピンクのやわらかい影
+ */
 @theme {
-  --color-canvas: #0d0f0f;
-  --color-node: #141616;
-  --color-pane: #1b1d1e;
-  --color-pane-muted: #232526;
-  --color-pane-border: #383a3b;
-  --color-node-border: rgb(255 255 255 / 0.2);
-  --color-fg: #ffffff;
-  --color-fg-muted: #bebfc1;
-  --color-fg-dim: #6f7375;
-  --color-accent: #1ded83;
-  --color-accent-glow: rgb(29 237 131 / 0.4);
-  --color-step-scan: #00a9b6;
-  --color-step-join: #c170ff;
-  --color-step-filter: #ffbf36;
-  --color-step-group: #3e63dd;
-  --color-step-project: #1ded83;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
-  --font-mono: ui-monospace, 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --color-canvas: #fff7f9;
+  --color-node: #ffffff;
+  --color-pane: #ffffff;
+  --color-pane-muted: #fbf0f4;
+  --color-pane-border: #f0e0e8;
+  --color-node-border: #f0e0e8;
+  --color-ink: #4a3b44;
+  --color-ink-muted: #8a7a84;
+  --color-ink-dim: #b9abb3;
+  --color-accent: #ff7dae;
+  --color-accent-ink: #d6467e;
+  --color-accent-soft: #ffd3e4;
+  --color-scan-ink: #0e8c74;
+  --color-scan-soft: #bdf0e3;
+  --color-join-ink: #7c4dd8;
+  --color-join-soft: #e5d8ff;
+  --color-filter-ink: #c77414;
+  --color-filter-soft: #ffe3bc;
+  --color-group-ink: #2b7cd9;
+  --color-group-soft: #cde5ff;
+  --color-project-ink: #d6467e;
+  --color-project-soft: #ffd3e4;
+  --font-sans:
+    'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', 'Zen Maru Gothic',
+    system-ui, sans-serif;
+  --font-mono: 'M PLUS 1 Code', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* React Flow のデフォルトノードスタイルを打ち消し、キャンバス色を合わせる */
