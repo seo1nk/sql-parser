@@ -54,8 +54,14 @@
 
 ## フェーズ 5: 可視化フロントエンド
 
-- [ ] 論理評価順のステップ表示（WITH → FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT）
-- [ ] JOIN による集合の合成の図示（ベン図 / ノードグラフ）
-- [ ] WHERE / HAVING による絞り込みの図示
-- [ ] SELECT による射影（列の抽出）の図示
-- [ ] エディタ連携（入力中の SQL をリアルタイムにパース・可視化）
+設計: [07_ui_design.md](./07_ui_design.md)
+
+- [x] デザインモックアップ（HTML 一枚・フィードバック反映済み）
+- [x] `frontend/` 雛形（Vite + React + TS + Tailwind + Base UI + @xyflow/react + elkjs）
+- [x] フローキャンバス（モック `Step[]` データ、ELK 層状レイアウト、左→右 = 論理実行順）
+- [x] JOIN の合流描画（結合済みテーブルノード + 矢印上の結合キーラベル）
+- [x] WHERE / HAVING / GROUP BY / SELECT のステップノードと列の系譜色分け（事実のみ表示・`…`）
+- [x] 上流経路ハイライト + パーティクル、実行順タイムライン（ステップ番号バッジ連動）
+- [ ] SQL エディタ（入力中の SQL をリアルタイムにパース・可視化）
+- [ ] WASM の `explain()` 実出力への差し替え（フェーズ 3・4 完了後）
+- [ ] チューニング支援（エッジへの行数・コスト表示、EXPLAIN 連携）
