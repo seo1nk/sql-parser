@@ -1,11 +1,11 @@
-use kernel::parser::{Functor, Parser};
+use kernel::parser::{Functor, StrParser};
 use kernel::satisfy::satisfy;
 
 use crate::sql_token::Token;
 
 /// 区切り文字（`(`, `)`, `,`, `;`, `.`）を `Token::Delimiter` として認識するパーサー
 /// `.` は `users.id` のような修飾名のために必要
-pub fn sql_delimiter() -> Parser<Token> {
+pub fn sql_delimiter() -> StrParser<Token> {
     satisfy(|c| matches!(c, '(' | ')' | ',' | ';' | '.')).map(Token::Delimiter)
 }
 

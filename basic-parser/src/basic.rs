@@ -1,38 +1,38 @@
-use kernel::parser::{Applicative, Functor, Parser};
+use kernel::parser::{Applicative, Functor, StrParser};
 use kernel::satisfy::satisfy;
 
 /// 期待する文字と等しいかを確認する述語関数を部分適用した Char パーサー
-pub fn char(expected: char) -> Parser<char> {
+pub fn char(expected: char) -> StrParser<char> {
     satisfy(move |c| c == expected)
 }
 
 /// 先頭文字が数字かどうかをチェックし、整数に変換する digit パーサー
-pub fn digit() -> Parser<i32> {
+pub fn digit() -> StrParser<i32> {
     satisfy(|c| c.is_ascii_digit()).map(|c| c.to_digit(10).unwrap() as i32)
 }
 
 /// アンダースコアをパースするパーサー
-pub fn underscore() -> Parser<char> {
+pub fn underscore() -> StrParser<char> {
     char('_')
 }
 
 /// 空白文字（スペース、タブ、改行）をスキップするパーサー
-pub fn whitespace() -> Parser<()> {
+pub fn whitespace() -> StrParser<()> {
     satisfy(|c| c.is_whitespace()).map(|_| ())
 }
 
 /// アルファベットの文字をパースするパーサー
-pub fn alphabet() -> Parser<char> {
+pub fn alphabet() -> StrParser<char> {
     satisfy(|c| c.is_alphabetic())
 }
 
 /// アルファベットまたは数字の文字をパースするパーサー
-pub fn alphanumeric() -> Parser<char> {
+pub fn alphanumeric() -> StrParser<char> {
     satisfy(|c| c.is_alphanumeric())
 }
 
 /// 指定された文字列と完全一致するかチェックするパーサー
-pub fn string(expected: &str) -> Parser<String> {
+pub fn string(expected: &str) -> StrParser<String> {
     if expected.is_empty() {
         // <Parser<String> as Applicative>::pure("".to_string()) と推論され、
         // Parser<String> に対して実装された pure が呼び出される

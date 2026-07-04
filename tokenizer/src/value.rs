@@ -1,10 +1,10 @@
-use kernel::parser::{Alternative, Applicative, Functor, Monad, Parser};
+use kernel::parser::{Alternative, Applicative, Functor, Monad, Parser, StrParser};
 
 use crate::identifier::identifier;
 use crate::sql_token::{SqlNumber, SqlValue, Token};
 
 /// 値リテラル（数値・文字列・TRUE/FALSE/NULL）を `Token::Value` として認識するパーサー
-pub fn sql_value() -> Parser<Token> {
+pub fn sql_value() -> StrParser<Token> {
     number()
         .map(SqlValue::Number)
         .alt(string_literal().map(SqlValue::String))
@@ -17,7 +17,7 @@ pub fn sql_value() -> Parser<Token> {
 /// - `12.5` → Float(12.5)
 /// - `1.` のように小数点の後に数字が続かない場合は Integer(1) として `.` を残す
 ///   （`users.id` のような修飾名の `.` と区別がつかないため）
-fn number() -> Parser<SqlNumber> {
+fn number() -> StrParser<SqlNumber> {
     Parser(Box::new(|input: String| {
         // 整数部の終わり（最初の非数字）を探す
         let int_end = input
@@ -48,7 +48,7 @@ fn number() -> Parser<SqlNumber> {
 
 /// 文字列リテラル `'...'` のパーサー
 /// クォートを除いた中身を返す。エスケープ（`''`）は未対応
-fn string_literal() -> Parser<String> {
+fn string_literal() -> StrParser<String> {
     Parser(Box::new(|input: String| {
         let mut chars = input.char_indices();
         let (_, first) = chars.next()?;
@@ -65,7 +65,7 @@ fn string_literal() -> Parser<String> {
 /// TRUE / FALSE / NULL のパーサー（大文字・小文字を区別しない）
 /// 識別子として読んでから照合することで、`TRUEマン` のような
 /// 識別子の前方一致を誤って値として認識しないようにする
-fn boolean_or_null() -> Parser<SqlValue> {
+fn boolean_or_null() -> StrParser<SqlValue> {
     identifier().and_then(|word| match word.to_uppercase().as_str() {
         "TRUE" => Applicative::pure(SqlValue::Boolean(true)),
         "FALSE" => Applicative::pure(SqlValue::Boolean(false)),

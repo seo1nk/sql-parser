@@ -29,18 +29,18 @@
 - [x] `tokenize`: 文字列全体をトークン列に変換
 - [ ] エラー位置の報告（フェーズ 3 の入力型リファクタリングと合わせて）
 
-## フェーズ 3: 構文解析（parser クレート・新規）
+## フェーズ 3: 構文解析（parser クレート）
 
 仕様: [05_grammar_spec.md](./05_grammar_spec.md)
 
-- [ ] トークン列を入力とするパーサー基盤（入力型のジェネリック化 or 専用型）
-- [ ] AST の定義（`SelectStatement`, `TableExpr`, `Expr` など）
-- [ ] 式パーサー（リテラル・列参照・二項演算・優先順位・括弧）
-- [ ] 各句のパーサー（SELECT / FROM / JOIN / WHERE / GROUP BY / HAVING / ORDER BY / LIMIT / OFFSET）
-- [ ] **句順序自由化**: 句の集合をパースして意味的に組み立てる（重複句はエラー）
-- [ ] WITH 句（CTE）
-- [ ] サブクエリ（FROM 内・IN / EXISTS）
-- [ ] 集合演算（UNION / INTERSECT / EXCEPT）
+- [x] トークン列を入力とするパーサー基盤（kernel を `Parser<I, T>` にジェネリック化 + `TokenStream`）
+- [x] AST の定義（`Query` / `SelectBody` / `TableExpr` / `Expr` など。論理評価順の正規形）
+- [x] 式パーサー（リテラル・列参照・関数・二項演算・優先順位・括弧・単項 NOT / マイナス）
+- [x] 各句のパーサー（SELECT / FROM / JOIN / WHERE / GROUP BY / HAVING / ORDER BY / LIMIT / OFFSET）
+- [x] **句順序自由化**: `many1(clause)` でパースして意味的に組み立てる（重複句はエラー、SELECT 省略時は `*`、FROM 必須）
+- [x] WITH 句（CTE）
+- [x] サブクエリ（FROM 内・IN / EXISTS）
+- [x] 集合演算（UNION / INTERSECT / EXCEPT）
 - [ ] エラー報告（位置・期待していたトークン）
 
 ## フェーズ 4: TypeScript 向け API（wasm-api クレート・新規）

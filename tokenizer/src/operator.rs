@@ -1,12 +1,12 @@
 use basic_parser::basic::string;
-use kernel::parser::{Alternative, Functor, Parser};
+use kernel::parser::{Alternative, Functor, StrParser};
 use kernel::satisfy::satisfy;
 
 use crate::sql_token::Token;
 
 /// SQL演算子を `Token::Operator` として認識するパーサー
 /// `<=` が `<` として認識されないよう、2文字の演算子を先に試す
-pub fn sql_operator() -> Parser<Token> {
+pub fn sql_operator() -> StrParser<Token> {
     let two_chars = string("<>")
         .alt(string("!="))
         .alt(string("<="))

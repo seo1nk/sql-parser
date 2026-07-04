@@ -1,11 +1,11 @@
-use kernel::parser::{Alternative, Applicative, Monad, Parser};
+use kernel::parser::{Alternative, Applicative, Monad, StrParser};
 
 use crate::identifier::identifier;
 use crate::sql_token::{Token, get_sql_keyword};
 
 /// 識別子として読み取った語がSQLキーワード表に一致すれば `Token::Keyword` として認識するパーサー
 /// 一致しなければ失敗する（識別子としての解釈は sql_identifier に任せる）
-pub fn sql_keyword() -> Parser<Token> {
+pub fn sql_keyword() -> StrParser<Token> {
     identifier().and_then(|word| match get_sql_keyword(&word) {
         // pure でパーサーの文脈に持ち上げる
         Some(keyword) => Applicative::pure(Token::Keyword(keyword)),

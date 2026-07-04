@@ -1,10 +1,10 @@
-use kernel::parser::Parser;
+use kernel::parser::{Parser, StrParser};
 
 use crate::sql_token::Token;
 
 /// 行コメント（`--` から行末まで）を `Token::Comment` として認識するパーサー
 /// コメントの中身（`--` を除く）を保持し、改行文字は消費しない
-pub fn sql_comment() -> Parser<Token> {
+pub fn sql_comment() -> StrParser<Token> {
     Parser(Box::new(|input: String| {
         let body = input.strip_prefix("--")?;
         // 行末（なければ入力の終わり）までがコメント本文

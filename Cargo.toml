@@ -5,14 +5,16 @@ edition = "2024"
 default-run = "main"
 
 [workspace]
-members = ["kernel", "tokenizer", "basic-parser"]
+members = ["kernel", "tokenizer", "basic-parser", "parser"]
 
 [workspace.dependencies]
 kernel = { path = "./kernel" }
 basic-parser = { path = "./basic-parser" }
 tokenizer = { path = "./tokenizer" }
+parser = { path = "./parser" }
 
 [dependencies]
 kernel.workspace = true
 tokenizer.workspace = true
 basic-parser.workspace = true
+parser.workspace = true

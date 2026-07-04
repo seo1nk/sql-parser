@@ -1,4 +1,4 @@
-use kernel::parser::{Alternative, Parser};
+use kernel::parser::{Alternative, StrParser};
 
 use crate::comment::sql_comment;
 use crate::delimiter::sql_delimiter;
@@ -15,7 +15,7 @@ use crate::value::sql_value;
 /// 3. キーワード（識別子より先）
 /// 4. 識別子
 /// 5. 演算子・区切り文字
-pub fn sql_token() -> Parser<Token> {
+pub fn sql_token() -> StrParser<Token> {
     sql_comment()
         .alt(sql_value())
         .alt(sql_keyword())

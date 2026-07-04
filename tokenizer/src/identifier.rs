@@ -1,9 +1,9 @@
-use kernel::parser::{Functor, Parser};
+use kernel::parser::{Functor, Parser, StrParser};
 
 use crate::sql_token::Token;
 
 /// SQL識別子トークンを生成
-pub fn sql_identifier() -> Parser<Token> {
+pub fn sql_identifier() -> StrParser<Token> {
     identifier().map(Token::Identifier)
 }
 
@@ -13,7 +13,7 @@ pub fn sql_identifier() -> Parser<Token> {
 ///
 /// キーワード（keyword.rs）や TRUE/FALSE/NULL（value.rs）も
 /// 「識別子として読んでから照合する」形で再利用するため pub にしている
-pub fn identifier() -> Parser<String> {
+pub fn identifier() -> StrParser<String> {
     Parser(Box::new(|input: String| {
         // UTF-8に対応した `(バイト位置, 文字)` を返す
         let mut chars = input.char_indices();
