@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 kernel.workspace = true
+basic-parser.workspace = true

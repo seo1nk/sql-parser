@@ -56,6 +56,17 @@ pub trait Alternative: Applicative {
     fn alt(self, other: Self) -> Self;
 }
 
+/// Haskell の >>=
+pub trait Monad: Applicative {
+    /// 前のパーサーの結果を使って、次に実行するパーサーを決める
+    /// (>>=) :: m a -> (a -> m b) -> m b
+    fn and_then<B, F>(self, f: F) -> Parser<B>
+    where
+        F: Fn(Self::Output) -> Parser<B> + 'static,
+        B: 'static,
+        Self: Sized;
+}
+
 /// Haskellの `$>`
 pub trait RightFunctor: Functor {
     /// 左の結果を無視して右の結果を返す
@@ -115,6 +126,23 @@ where
         Parser(Box::new(move |input| match self.run(input.clone()) {
             Some(result) => Some(result),
             None => other.run(input),
+        }))
+    }
+}
+
+impl<T> Monad for Parser<T>
+where
+    T: Clone + 'static,
+{
+    fn and_then<B, F>(self, f: F) -> Parser<B>
+    where
+        F: Fn(T) -> Parser<B> + 'static,
+        B: 'static,
+    {
+        Parser(Box::new(move |input: String| {
+            // 先に self を実行し、その結果 a から f(a) で次のパーサーを作って残りに適用する
+            let (a, rest) = self.run(input)?;
+            f(a).run(rest)
         }))
     }
 }

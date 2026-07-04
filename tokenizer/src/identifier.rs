@@ -10,7 +10,10 @@ pub fn sql_identifier() -> Parser<Token> {
 /// 入力文字列の先頭からSQL標準準拠の識別子を認識するパーサー
 /// - 成功: Some (識別子, 残り)
 /// - 失敗: None（空文字列、無効な開始文字などを含む文字列）
-fn identifier() -> Parser<String> {
+///
+/// キーワード（keyword.rs）や TRUE/FALSE/NULL（value.rs）も
+/// 「識別子として読んでから照合する」形で再利用するため pub にしている
+pub fn identifier() -> Parser<String> {
     Parser(Box::new(|input: String| {
         // UTF-8に対応した `(バイト位置, 文字)` を返す
         let mut chars = input.char_indices();

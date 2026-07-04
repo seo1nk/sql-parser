@@ -1,38 +1,22 @@
-use basic_parser::basic::{char, digit, string};
+use tokenizer::tokenize::tokenize;
 
 fn main() {
-    println!("Hello, world!");
+    // 標準的な書き方と FROM-first の書き方の両方をトークナイズしてみる
+    let queries = [
+        "SELECT id, name FROM users WHERE age >= 20;",
+        "FROM users u JOIN orders o ON u.id = o.user_id WHERE o.price > 1.5 SELECT u.name -- from-first",
+    ];
 
-    let input = "SELECT id, name FROM foo;".to_string();
-    let parser = char('S');
-    match parser.run(input) {
-        Some((parsed, remaining)) => {
-            println!("Parsed: '{parsed}', Remaining: '{remaining}'")
+    for sql in queries {
+        println!("SQL: {sql}");
+        match tokenize(sql) {
+            Some(tokens) => {
+                for token in tokens {
+                    println!("  {token:?}");
+                }
+            }
+            None => println!("  Tokenize failed."),
         }
-        None => {
-            println!("Parsing failed.");
-        }
-    }
-
-    let input = "5dsf".to_string();
-    let parser = digit();
-    match parser.run(input) {
-        Some((parsed, remaining)) => {
-            println!("Parsed: '{parsed}', Remaining: '{remaining}'")
-        }
-        None => {
-            println!("Parsing failed.");
-        }
-    }
-
-    let input = "hello, world".to_string();
-    let parser = string("hell");
-    match parser.run(input) {
-        Some((parsed, remaining)) => {
-            println!("Parsed: '{parsed}', Remaining: '{remaining}'")
-        }
-        None => {
-            println!("Parsing failed.");
-        }
+        println!();
     }
 }

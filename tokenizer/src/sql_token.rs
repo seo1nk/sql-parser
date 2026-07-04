@@ -7,7 +7,7 @@ pub enum Token {
 
     // =, <>, !=, <, >, <=, >=, +, -, *, /
     Operator(String),
-    // `(`, `)`, `,`, `;`
+    // `(`, `)`, `,`, `;`, `.`
     Delimiter(char),
 
     Comment(String),
@@ -31,6 +31,8 @@ pub enum SqlKeyword {
     Right,
     Inner,
     Outer,
+    Full,
+    Cross,
     On,
 
     // 集約・ソート
@@ -60,6 +62,9 @@ pub enum SqlKeyword {
     // ソート方向
     Asc,
     Desc,
+
+    // CTE
+    With,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -91,6 +96,8 @@ pub fn get_sql_keyword(word: &str) -> Option<SqlKeyword> {
         "RIGHT" => Some(SqlKeyword::Right),
         "INNER" => Some(SqlKeyword::Inner),
         "OUTER" => Some(SqlKeyword::Outer),
+        "FULL" => Some(SqlKeyword::Full),
+        "CROSS" => Some(SqlKeyword::Cross),
         "ON" => Some(SqlKeyword::On),
         "GROUP" => Some(SqlKeyword::Group),
         "BY" => Some(SqlKeyword::By),
@@ -110,6 +117,7 @@ pub fn get_sql_keyword(word: &str) -> Option<SqlKeyword> {
         "EXCEPT" => Some(SqlKeyword::Except),
         "ASC" => Some(SqlKeyword::Asc),
         "DESC" => Some(SqlKeyword::Desc),
+        "WITH" => Some(SqlKeyword::With),
         _ => None,
     }
 }
