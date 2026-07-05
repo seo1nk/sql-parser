@@ -53,11 +53,8 @@ export default function App() {
           <h1 className="text-[15px] font-extrabold tracking-wide">
             SQL Flow
           </h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-accent-ink">
-            Rust WASM
-          </span>
           <span className="ml-auto text-xs font-medium text-ink-dim">
-            SQL を編集するとフローが更新されます / バッジとタイムラインは論理実行順
+            SQL を編集するとフローが更新されます
           </span>
         </header>
         <div className="flex min-h-0 flex-1">

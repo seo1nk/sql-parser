@@ -69,7 +69,6 @@ export function SqlPane({ sql, onChange, error }: Props) {
         <span className="font-bold text-accent-ink">ピンク</span> =
         最終結果に値が届く列 / グレー = 条件にのみ使われる列。 フローの並び =
         論理実行順なので、読解だけでなくチューニングの検討にも使えます。
-        パースは Rust 製パーサー(WASM)がブラウザ内で実行しています。
       </p>
     </aside>
   )
