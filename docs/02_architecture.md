@@ -70,6 +70,48 @@ TypeScript / Web フロントエンド
     重複句は失敗、FROM は必須、SELECT 省略時は `*` とみなす
   - AST の `SelectBody` は句の出現順に依存しない論理評価順の正規形
 
+## データの流れ(シーケンス)
+
+SQL を編集してからフロー図が描かれるまでの詳細な流れ。
+
+```mermaid
+sequenceDiagram
+    actor U as ユーザー
+    participant SP as SqlPane<br>(textarea)
+    participant App as App.tsx<br>(状態管理)
+    participant API as wasm/api.ts<br>(TS ラッパー)
+    participant W as wasm-api<br>(WASM)
+    participant T as tokenizer
+    participant P as parser
+    participant E as explain
+    participant FA as FlowArea<br>(React Flow)
+
+    U->>SP: SQL を編集
+    SP->>App: onChange(sql)
+    Note over App: 300ms デバウンス
+    App->>API: explainSql(sql)
+    Note over API: 初回のみ init()<br>(wasm_api_bg.wasm をフェッチ)
+    API->>W: explain(sql)
+    W->>T: tokenize(sql)
+    T-->>W: Vec<Token>
+    W->>P: query().run(TokenStream)
+    Note over P: 句順序自由の構文解析<br>many1(clause) → 意味的組み立て
+    P-->>W: AST (Query)<br>※論理評価順の正規形
+    W->>E: explain(&query)
+    Note over E: 列の系譜(output/used)計算<br>JOIN の合流・タイムライン生成
+    E-->>W: FlowGraph
+    W-->>API: JSON 文字列<br>{ok, value | error}
+    API-->>App: ExplainResult
+    App->>FA: graph を渡す
+    Note over FA: toReactFlow(変換)<br>→ ELK 層状レイアウト<br>→ グループ枠計算
+    FA-->>U: データフロー図を描画
+```
+
+- パース失敗時は `{ok: false, error}` が返り、App は**直前の正常なグラフを残したまま**
+  エラーメッセージだけを表示する
+- ノードホバー時は WASM を経由せず、フロント側の純粋関数
+  (`collectUpstream` / `highlightNodes` / `highlightEdges`)だけで上流経路を再計算する
+
 ## 設計上のメモ・既知の課題
 
 1. **字句解析の入力が `String`（所有権あり）である**

@@ -46,8 +46,9 @@ sql-visualizer (workspace root / bin)
 
 | ファイル | 内容 |
 | --- | --- |
-| [02_architecture.md](./02_architecture.md) | 現在のアーキテクチャと設計上のメモ |
+| [02_architecture.md](./02_architecture.md) | アーキテクチャ・データの流れ(シーケンス図)・設計上のメモ |
 | [03_roadmap.md](./03_roadmap.md) | 開発ロードマップ（フェーズ別チェックリスト） |
 | [04_tokenizer_spec.md](./04_tokenizer_spec.md) | 字句解析（トークナイザー）の仕様 |
 | [05_grammar_spec.md](./05_grammar_spec.md) | サポートする SELECT 文の文法（句順序自由化を含む） |
-| [06_api_design.md](./06_api_design.md) | TypeScript 向け API と可視化データモデルの設計 |
+| [06_api_design.md](./06_api_design.md) | WASM API（parse / explain）と FlowGraph 契約 |
+| [07_ui_design.md](./07_ui_design.md) | 可視化 UI の設計（描画ルール・デザイントークン） |
