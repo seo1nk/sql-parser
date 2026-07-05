@@ -1,0 +1,26 @@
+/**
+ * SQL Flow を kseo.ink/works/sql-flow* で配信する静的アセットのみのワーカー。
+ * asobi(kseo.ink 本体)とは独立にデプロイする。
+ *
+ * デプロイ: pnpm run deploy:works
+ * (kseo.ink ゾーンの Custom Domain を持つ asobi ワーカーより、
+ *  パスが具体的なこのルートが優先される)
+ *
+ * パスを変えたいときは routes.pattern と scripts/stage-deploy.mjs の
+ * ディレクトリ名を合わせて変更する。
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sql-flow",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": false,
+  "assets": {
+    "directory": ".deploy",
+  },
+  "routes": [
+    {
+      "pattern": "kseo.ink/works/sql-flow*",
+      "zone_name": "kseo.ink",
+    },
+  ],
+}

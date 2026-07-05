@@ -132,3 +132,19 @@ pnpm dev                    # 開発サーバー
 pnpm build                  # 型チェック + プロダクションビルド
 node scripts/wasm-smoke.mjs # WASM 経由の動作確認
 ```
+
+## デプロイ(kseo.ink/works/sql-flow)
+
+静的アセットのみの Cloudflare Worker として、kseo.ink 本体(asobi)とは
+独立にデプロイする。パスが具体的なルートが優先されるため、本体の設定変更は不要。
+
+```sh
+cd frontend
+pnpm run deploy:works   # WASM ビルド → vite build --base ./ → .deploy にステージング → wrangler deploy
+```
+
+- 設定: [frontend/wrangler.works.jsonc](./frontend/wrangler.works.jsonc)
+  (ルート `kseo.ink/works/sql-flow*`)
+- 配信パスを変える場合は wrangler.works.jsonc の `routes.pattern` と
+  [frontend/scripts/stage-deploy.mjs](./frontend/scripts/stage-deploy.mjs) の
+  ディレクトリ名を合わせて変更する
