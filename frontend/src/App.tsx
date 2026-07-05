@@ -29,14 +29,22 @@ export default function App() {
   useEffect(() => {
     let cancelled = false
     const timer = setTimeout(async () => {
-      const result = await explainSql(sql)
-      if (cancelled) return
-      if (result.ok) {
-        setGraph(result.graph)
-        setError(null)
-      } else {
-        // 失敗時は直前の正常なグラフを残したままエラーを表示する
-        setError(result.error)
+      try {
+        const result = await explainSql(sql)
+        if (cancelled) return
+        if (result.ok) {
+          setGraph(result.graph)
+          setError(null)
+        } else {
+          // 失敗時は直前の正常なグラフを残したままエラーを表示する
+          setError(result.error)
+        }
+      } catch (cause) {
+        // WASM の読み込み失敗など、パース以前の例外もエラー表示に落とす
+        console.error(cause)
+        if (!cancelled) {
+          setError('うまく動きませんでした。ページを再読み込みしてみてください。')
+        }
       }
     }, 300)
     return () => {

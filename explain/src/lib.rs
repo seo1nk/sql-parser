@@ -12,13 +12,14 @@ pub mod flow;
 use std::collections::HashMap;
 
 use parser::ast::{
-    Expr, JoinType, Query, SelectBody, SelectList, TablePrimary,
+    Expr, JoinType, ObjectName, Query, SelectBody, SelectList, TablePrimary,
 };
 
 use crate::analyze::{
-    BodyFacts, ProducedRoles, SourceFacts, analyze_body, collect_sources, produced_name,
-    source_key,
+    BodyFacts, ProducedRoles, SourceFacts, analyze_body, collect_sources, identifier_eq,
+    max_role, produced_name, source_key,
 };
+use parser::ast::SelectBody as AstSelectBody;
 use crate::flow::{Column, FlowEdge, FlowGraph, FlowGroup, FlowNode, Role, TimelineStep};
 
 /// SQL 文字列をパースしてフローグラフに変換する
@@ -107,15 +108,31 @@ impl Builder {
             return Err("UNION / INTERSECT / EXCEPT の可視化は未対応です".to_string());
         }
 
-        let facts = analyze_body(&query.body, produced);
+        let main_facts = analyze_body(&query.body, produced);
 
-        // CTE を先に構築する(本体からノード ID で参照される)
-        for cte in &query.with {
-            let outer_roles = roles_for_cte(&query.body, &facts, &cte.name);
-            self.build_cte(cte, outer_roles, is_main)?;
+        // CTE の列の役割は「それを参照する側」で決まる。CTE は自分より前の CTE しか
+        // 参照できないため、後ろの CTE から前へ役割を伝播させる
+        // (例: main が b.x を出力し、b が a.x を SELECT していれば a.x も output)
+        let mut analyzed: Vec<(&AstSelectBody, BodyFacts)> = vec![(&query.body, main_facts)];
+        let mut cte_roles: Vec<HashMap<String, Role>> = vec![HashMap::new(); query.with.len()];
+        for (i, cte) in query.with.iter().enumerate().rev() {
+            let mut roles = HashMap::new();
+            for (body, facts) in &analyzed {
+                merge_roles(&mut roles, roles_for_source_named(body, facts, &cte.name));
+            }
+            let produced_cte = ProducedRoles::by_name(roles.clone());
+            let facts_cte = analyze_body(&cte.query.body, &produced_cte);
+            analyzed.push((&cte.query.body, facts_cte));
+            cte_roles[i] = roles;
         }
 
-        self.build_body(&query.body, group, produced, &facts, is_main)
+        // CTE を先に構築する(本体からノード ID で参照される)
+        for (cte, roles) in query.with.iter().zip(cte_roles) {
+            self.build_cte(cte, roles, is_main)?;
+        }
+
+        let main_facts = &analyzed[0].1;
+        self.build_body(&query.body, group, produced, main_facts, is_main)
     }
 
     /// WITH の1要素をグループ枠つきのサブフローとして構築する
@@ -131,7 +148,7 @@ impl Builder {
             label: format!("① WITH {} AS ( … )", cte.name),
         });
 
-        let produced = ProducedRoles::ByName(outer_roles);
+        let produced = ProducedRoles::by_name(outer_roles);
         let end = self.build_query(&cte.query, Some(group_id.clone()), &produced, false)?;
 
         // CTE の列 = SELECT が作る列(事実)。SELECT * なら上流の既知列を引き継ぐ
@@ -147,7 +164,8 @@ impl Builder {
         });
         self.edge(&end.node_id, &node_id, None);
 
-        self.ctes.insert(cte.name.clone(), node_id.clone());
+        // 参照解決は大文字小文字を区別しない
+        self.ctes.insert(cte.name.to_lowercase(), node_id.clone());
         if record_timeline {
             self.slots.with.push(node_id);
         }
@@ -197,6 +215,26 @@ impl Builder {
         let mut current = flows.remove(0);
         for right in flows {
             current = self.merge(current, right, "CROSS", None, group.clone(), is_main);
+        }
+
+        // どの供給源の列か特定できなかった参照も SQL に現れた事実なので、
+        // 合流後(または唯一の供給源)の集合に表示する
+        if !facts.unattributed.is_empty() {
+            let extra: Vec<Column> = facts
+                .unattributed
+                .iter()
+                .map(|fact| Column {
+                    name: match &fact.qualifier {
+                        Some(q) => format!("{q}.{}", fact.name),
+                        None => fact.name.clone(),
+                    },
+                    role: fact.role,
+                })
+                .collect();
+            self.append_columns(&current.node_id, &extra);
+            for column in extra {
+                merge_column(&mut current.columns, column);
+            }
         }
 
         // ---- 絞り込み・グループ化 ----
@@ -338,7 +376,7 @@ impl Builder {
 
                 // CTE 参照なら既存ノードを共有する(集合の再利用がそのまま図に出る)
                 if name.0.len() == 1
-                    && let Some(cte_id) = self.ctes.get(&simple_name).cloned() {
+                    && let Some(cte_id) = self.ctes.get(&simple_name.to_lowercase()).cloned() {
                         if let Some(alias_name) = alias {
                             self.set_cte_alias(&cte_id, alias_name);
                         }
@@ -392,7 +430,7 @@ impl Builder {
                     .iter()
                     .map(|f| (f.name.clone(), f.role))
                     .collect();
-                let produced = ProducedRoles::ByName(roles);
+                let produced = ProducedRoles::by_name(roles);
 
                 let group_id = self.next_id("group-subquery");
                 let label = alias.clone().unwrap_or_else(|| "サブクエリ".to_string());
@@ -493,6 +531,24 @@ impl Builder {
             .unwrap_or_default()
     }
 
+    /// 既存ノードの列リストに列を追加する(名前が重複したら役割をマージ)
+    fn append_columns(&mut self, node_id: &str, extra: &[Column]) {
+        for node in &mut self.nodes {
+            if node.id() != node_id {
+                continue;
+            }
+            if let FlowNode::Scan { columns, .. }
+            | FlowNode::Cte { columns, .. }
+            | FlowNode::Joined { columns, .. }
+            | FlowNode::Result { columns, .. } = node
+            {
+                for column in extra {
+                    merge_column(columns, column.clone());
+                }
+            }
+        }
+    }
+
     fn node_has_more(&self, node_id: &str) -> bool {
         self.nodes
             .iter()
@@ -566,13 +622,16 @@ fn join_key_labels(
         right,
     } = on
         && let (Expr::Column(a), Expr::Column(b)) = (left.as_ref(), right.as_ref()) {
-            let a_qualifier = a.0.first().map(|s| s.as_str());
-            let b_qualifier = b.0.first().map(|s| s.as_str());
+            let matches_right = |name: &ObjectName| {
+                name.0.len() >= 2
+                    && right_qualifier
+                        .is_some_and(|q| identifier_eq(&name.0[0], q))
+            };
             // 右側の集合の修飾子に一致する方を右エッジへ
-            if a.0.len() >= 2 && a_qualifier == right_qualifier {
+            if matches_right(a) {
                 return (Some(b.to_string()), Some(a.to_string()));
             }
-            if b.0.len() >= 2 && b_qualifier == right_qualifier {
+            if matches_right(b) {
                 return (Some(a.to_string()), Some(b.to_string()));
             }
             return (Some(a.to_string()), Some(b.to_string()));
@@ -640,8 +699,29 @@ fn produced_columns_of(
     }
 }
 
-/// メイン body の分析結果から、指定した CTE の列ごとの役割を集める
-fn roles_for_cte(
+/// 列を名前(大文字小文字を区別しない)でマージする
+fn merge_column(columns: &mut Vec<Column>, column: Column) {
+    match columns
+        .iter_mut()
+        .find(|c| identifier_eq(&c.name, &column.name))
+    {
+        Some(existing) => existing.role = max_role(existing.role, column.role),
+        None => columns.push(column),
+    }
+}
+
+/// 役割マップをマージする(output が used に勝つ)
+fn merge_roles(into: &mut HashMap<String, Role>, from: HashMap<String, Role>) {
+    for (name, role) in from {
+        into.entry(name)
+            .and_modify(|r| *r = max_role(*r, role))
+            .or_insert(role);
+    }
+}
+
+/// body の分析結果から、指定した名前(CTE)を参照している列ごとの役割を集める
+/// キーは小文字に正規化して返す
+fn roles_for_source_named(
     body: &SelectBody,
     facts: &BodyFacts,
     cte_name: &str,
@@ -650,12 +730,15 @@ fn roles_for_cte(
     for (source, source_facts) in collect_sources(body).iter().zip(&facts.per_source) {
         let is_this_cte = matches!(
             source,
-            TablePrimary::Table { name, .. } if name.0.len() == 1 && name.0[0] == cte_name
+            TablePrimary::Table { name, .. }
+                if name.0.len() == 1 && identifier_eq(&name.0[0], cte_name)
         );
         if is_this_cte {
             for fact in &source_facts.columns {
-                let entry = roles.entry(fact.name.clone()).or_insert(fact.role);
-                *entry = analyze::max_role(*entry, fact.role);
+                let entry = roles
+                    .entry(fact.name.to_lowercase())
+                    .or_insert(fact.role);
+                *entry = max_role(*entry, fact.role);
             }
         }
     }

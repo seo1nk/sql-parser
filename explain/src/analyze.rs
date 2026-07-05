@@ -18,12 +18,30 @@ pub enum ProducedRoles {
 }
 
 impl ProducedRoles {
+    /// 列名 → 役割の対応から作る(識別子は大文字小文字を区別しない)
+    pub fn by_name(roles: HashMap<String, Role>) -> Self {
+        ProducedRoles::ByName(
+            roles
+                .into_iter()
+                .map(|(name, role)| (name.to_lowercase(), role))
+                .collect(),
+        )
+    }
+
     pub fn role_for(&self, name: &str) -> Role {
         match self {
             ProducedRoles::AllOutput => Role::Output,
-            ProducedRoles::ByName(map) => map.get(name).copied().unwrap_or(Role::Used),
+            ProducedRoles::ByName(map) => map
+                .get(&name.to_lowercase())
+                .copied()
+                .unwrap_or(Role::Used),
         }
     }
+}
+
+/// SQL の識別子としての等価比較(大文字小文字を区別しない)
+pub fn identifier_eq(a: &str, b: &str) -> bool {
+    a.to_lowercase() == b.to_lowercase()
 }
 
 /// 1つの列参照の事実
@@ -42,12 +60,20 @@ pub struct SourceFacts {
     pub columns: Vec<ColumnFact>,
 }
 
+/// 列事実を列名(大文字小文字を区別しない)でマージする
+fn merge_fact(columns: &mut Vec<ColumnFact>, fact: ColumnFact) {
+    match columns
+        .iter_mut()
+        .find(|c| identifier_eq(&c.name, &fact.name))
+    {
+        Some(existing) => existing.role = max_role(existing.role, fact.role),
+        None => columns.push(fact),
+    }
+}
+
 impl SourceFacts {
     fn merge(&mut self, fact: ColumnFact) {
-        match self.columns.iter_mut().find(|c| c.name == fact.name) {
-            Some(existing) => existing.role = max_role(existing.role, fact.role),
-            None => self.columns.push(fact),
-        }
+        merge_fact(&mut self.columns, fact);
     }
 }
 
@@ -56,6 +82,9 @@ impl SourceFacts {
 pub struct BodyFacts {
     /// 供給源ごとの列事実。並び順は collect_sources と同じ
     pub per_source: Vec<SourceFacts>,
+    /// どの供給源の列か特定できなかった参照(修飾なしで複数ソースなど)。
+    /// SQL に現れた事実なので、合流後の集合に表示する
+    pub unattributed: Vec<ColumnFact>,
 }
 
 pub fn max_role(a: Role, b: Role) -> Role {
@@ -104,9 +133,11 @@ pub fn produced_name(item: &SelectItem) -> String {
 pub fn analyze_body(body: &SelectBody, produced: &ProducedRoles) -> BodyFacts {
     let keys: Vec<Option<String>> = collect_sources(body).iter().map(|s| source_key(s)).collect();
     let mut per_source: Vec<SourceFacts> = keys.iter().map(|_| SourceFacts::default()).collect();
+    let mut unattributed: Vec<ColumnFact> = Vec::new();
 
     {
-        let mut sink = |fact: ColumnFact| attribute(&mut per_source, &keys, fact);
+        let mut sink =
+            |fact: ColumnFact| attribute(&mut per_source, &mut unattributed, &keys, fact);
 
         // SELECT 句: 作られる列の役割(output/used)を、参照している列に引き継ぐ
         if let SelectList::Items(items) = &body.select {
@@ -145,25 +176,37 @@ pub fn analyze_body(body: &SelectBody, produced: &ProducedRoles) -> BodyFacts {
                 column.role = max_role(column.role, produced.role_for(&column.name));
             }
         }
+        for column in &mut unattributed {
+            column.role = max_role(column.role, produced.role_for(&column.name));
+        }
     }
 
-    BodyFacts { per_source }
+    BodyFacts {
+        per_source,
+        unattributed,
+    }
 }
 
-/// 列参照を修飾子で供給源に振り分ける
+/// 列参照を修飾子で供給源に振り分ける(識別子は大文字小文字を区別しない)
 /// - 修飾子が供給源の名前に一致すればその供給源へ
 /// - 修飾子なしで供給源が1つならその供給源へ
-/// - それ以外(どの集合の列か特定できない)は事実として扱えないため捨てる
-fn attribute(per_source: &mut [SourceFacts], keys: &[Option<String>], fact: ColumnFact) {
+/// - それ以外は unattributed へ(どの集合の列かは不明だが事実ではある)
+fn attribute(
+    per_source: &mut [SourceFacts],
+    unattributed: &mut Vec<ColumnFact>,
+    keys: &[Option<String>],
+    fact: ColumnFact,
+) {
     let index = match &fact.qualifier {
         Some(q) => keys
             .iter()
-            .position(|k| k.as_deref() == Some(q.as_str())),
+            .position(|k| k.as_deref().is_some_and(|key| identifier_eq(key, q))),
         None if keys.len() == 1 => Some(0),
         None => None,
     };
-    if let Some(i) = index {
-        per_source[i].merge(fact);
+    match index {
+        Some(i) => per_source[i].merge(fact),
+        None => merge_fact(unattributed, fact),
     }
 }
 

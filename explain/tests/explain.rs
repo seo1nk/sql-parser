@@ -221,6 +221,86 @@ fn subquery_in_from_gets_own_group() {
 }
 
 #[test]
+fn roles_propagate_through_cte_chain() {
+    // main は b.x だけを出力 → b の x が output → b が SELECT する a.x も output。
+    // a.y は b の WHERE でしか使われないので used
+    let graph = explain_sql(
+        "WITH a AS (FROM t SELECT x, y), b AS (FROM a WHERE y > 0 SELECT x) FROM b SELECT x",
+    )
+    .unwrap();
+    let FlowNode::Cte { columns, .. } = find(&graph, "cte-a") else {
+        panic!()
+    };
+    assert_eq!(
+        columns,
+        &vec![column("x", Role::Output), column("y", Role::Used)]
+    );
+    let FlowNode::Cte { columns, .. } = find(&graph, "cte-b") else {
+        panic!()
+    };
+    assert_eq!(columns, &vec![column("x", Role::Output)]);
+}
+
+#[test]
+fn unattributed_columns_appear_on_joined_node() {
+    // flag はどちらのテーブルの列か特定できないが、事実として合流後の集合に表示する
+    let graph =
+        explain_sql("FROM a JOIN b ON a.x = b.y WHERE flag = 1 SELECT a.x").unwrap();
+    let FlowNode::Joined { columns, .. } = graph
+        .nodes
+        .iter()
+        .find(|n| matches!(n, FlowNode::Joined { .. }))
+        .unwrap()
+    else {
+        panic!()
+    };
+    assert!(columns.contains(&column("flag", Role::Used)));
+
+    // SELECT *(省略)なら flag も結果に届く
+    let graph = explain_sql("FROM a JOIN b ON a.x = b.y WHERE flag = 1").unwrap();
+    let FlowNode::Joined { columns, .. } = graph
+        .nodes
+        .iter()
+        .find(|n| matches!(n, FlowNode::Joined { .. }))
+        .unwrap()
+    else {
+        panic!()
+    };
+    assert!(columns.contains(&column("flag", Role::Output)));
+}
+
+#[test]
+fn identifier_matching_is_case_insensitive() {
+    // CTE 参照・修飾子・列名の照合は大文字小文字を区別しない(表示は書かれたまま)
+    let graph = explain_sql(
+        "WITH Adults AS (FROM users U WHERE u.age >= 20 SELECT u.id) FROM ADULTS SELECT ID",
+    )
+    .unwrap();
+    // ADULTS は新しい scan ではなく CTE 参照になる
+    assert!(
+        !graph
+            .nodes
+            .iter()
+            .any(|n| matches!(n, FlowNode::Scan { label, .. } if label == "ADULTS"))
+    );
+    let FlowNode::Cte { columns, .. } = find(&graph, "cte-Adults") else {
+        panic!()
+    };
+    assert_eq!(columns, &vec![column("id", Role::Output)]);
+    // u.age は別名 U のテーブルに帰属する
+    let FlowNode::Scan { columns, .. } = graph
+        .nodes
+        .iter()
+        .find(|n| matches!(n, FlowNode::Scan { label, .. } if label == "users"))
+        .unwrap()
+    else {
+        panic!()
+    };
+    assert!(columns.contains(&column("id", Role::Output)));
+    assert!(columns.contains(&column("age", Role::Used)));
+}
+
+#[test]
 fn set_operations_are_not_supported_yet() {
     let error = explain_sql("SELECT id FROM a UNION SELECT id FROM b").unwrap_err();
     assert!(error.contains("未対応"));
