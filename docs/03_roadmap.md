@@ -43,14 +43,18 @@
 - [x] 集合演算（UNION / INTERSECT / EXCEPT）
 - [ ] エラー報告（位置・期待していたトークン）
 
-## フェーズ 4: TypeScript 向け API（wasm-api クレート・新規）
+## フェーズ 4: TypeScript 向け API（explain / wasm-api クレート）
 
 仕様: [06_api_design.md](./06_api_design.md)
 
-- [ ] AST への serde 導入（JSON シリアライズ）
-- [ ] wasm-bindgen による `parse(sql: string) -> ParseResultJson` の公開
-- [ ] npm パッケージ化（wasm-pack）
-- [ ] TypeScript 型定義（AST の型を .d.ts として提供）
+- [x] AST への serde 導入（JSON シリアライズ）
+- [x] **explain クレート**: AST → FlowGraph 変換（JOIN の合流、列の系譜 = output/used の計算、
+  事実のみの列表示、論理実行順タイムライン生成）
+- [x] wasm-bindgen による `parse(sql)` / `explain(sql)` の公開（JSON 文字列で返す）
+- [x] wasm-pack ビルド（`frontend/src/wasm/pkg` に生成、`pnpm build:wasm`）
+- [x] TypeScript 型定義（FlowGraph 契約は frontend/src/types/flow.ts に手書きで管理）
+- [ ] UNION / INTERSECT / EXCEPT の可視化（explain 側が未対応）
+- [ ] npm パッケージとしての配布（現状はリポジトリ内ビルドのみ）
 
 ## フェーズ 5: 可視化フロントエンド
 
@@ -62,6 +66,8 @@
 - [x] JOIN の合流描画（結合済みテーブルノード + 矢印上の結合キーラベル）
 - [x] WHERE / HAVING / GROUP BY / SELECT のステップノードと列の系譜色分け（事実のみ表示・`…`）
 - [x] 上流経路ハイライト + パーティクル、実行順タイムライン（ステップ番号バッジ連動）
-- [ ] SQL エディタ（入力中の SQL をリアルタイムにパース・可視化）
-- [ ] WASM の `explain()` 実出力への差し替え（フェーズ 3・4 完了後）
+- [x] SQL エディタ（入力中の SQL をデバウンスしてリアルタイムにパース・可視化、
+  エラー時は直前のグラフを残してメッセージ表示）
+- [x] WASM の `explain()` 実出力への差し替え（モックデータは廃止）
+- [ ] シンタックスハイライト付きエディタ（現状はプレーンな textarea）
 - [ ] チューニング支援（エッジへの行数・コスト表示、EXPLAIN 連携）

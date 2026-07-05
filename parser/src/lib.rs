@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod clause;
+pub mod display;
 pub mod expr;
 pub mod primitive;
 pub mod query;

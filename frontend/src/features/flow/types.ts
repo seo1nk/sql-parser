@@ -13,9 +13,9 @@ export type TableNodeData = {
   isHighlighted: boolean
 }
 
-/** ステップ系ノード(filter / group / project)の描画データ */
+/** ステップ系ノード(filter / group / project / sort / slice)の描画データ */
 export type StepNodeData = {
-  kind: 'filter' | 'group' | 'project'
+  kind: 'filter' | 'group' | 'project' | 'sort' | 'slice'
   title: string
   body: string
   stepNo?: string

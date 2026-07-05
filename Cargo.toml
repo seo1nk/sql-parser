@@ -5,16 +5,18 @@ edition = "2024"
 default-run = "main"
 
 [workspace]
-members = ["kernel", "tokenizer", "basic-parser", "parser"]
+members = ["kernel", "tokenizer", "basic-parser", "parser", "explain", "wasm-api"]
 
 [workspace.dependencies]
 kernel = { path = "./kernel" }
 basic-parser = { path = "./basic-parser" }
 tokenizer = { path = "./tokenizer" }
 parser = { path = "./parser" }
+explain = { path = "./explain" }
 
 [dependencies]
 kernel.workspace = true
 tokenizer.workspace = true
 basic-parser.workspace = true
 parser.workspace = true
+explain.workspace = true

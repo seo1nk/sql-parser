@@ -254,8 +254,8 @@ fn primary() -> TokenParser<Expr> {
 
         // 関数呼び出し or 列参照
         let (name, rest) = object_name().run(input)?;
-        if name.0.len() == 1 {
-            if let Some(((), after_paren)) = delimiter('(').run(rest.clone()) {
+        if name.0.len() == 1
+            && let Some(((), after_paren)) = delimiter('(').run(rest.clone()) {
                 let function_name = name.0[0].clone();
                 // count(*)
                 if let Some(((), next)) = operator("*").run(after_paren.clone()) {
@@ -289,7 +289,6 @@ fn primary() -> TokenParser<Expr> {
                     next,
                 ));
             }
-        }
         Some((Expr::Column(name), rest))
     }))
 }

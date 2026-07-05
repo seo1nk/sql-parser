@@ -18,6 +18,17 @@ const KIND_STYLE = {
     chip: 'bg-project-soft text-project-ink',
     head: 'text-project-ink',
   },
+  // 並び替えはグループ化と同系色、切り出しは絞り込みと同系色で表現する
+  sort: {
+    badge: 'SORT',
+    chip: 'bg-group-soft text-group-ink',
+    head: 'text-group-ink',
+  },
+  slice: {
+    badge: 'SLICE',
+    chip: 'bg-filter-soft text-filter-ink',
+    head: 'text-filter-ink',
+  },
 } as const
 
 /** WHERE / HAVING / GROUP BY / SELECT のステップノード */

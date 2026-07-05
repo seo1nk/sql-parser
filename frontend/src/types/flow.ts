@@ -71,8 +71,24 @@ export type FlowNode =
       distinct: boolean
       groupId?: string
     }
+  /** ORDER BY による並び替え */
+  | { id: string; kind: 'sort'; keys: string[]; groupId?: string }
+  /** LIMIT / OFFSET による切り出し */
+  | {
+      id: string
+      kind: 'slice'
+      limit?: number
+      offset?: number
+      groupId?: string
+    }
   /** 最終結果のテーブル */
-  | { id: string; kind: 'result'; columns: Column[]; groupId?: string }
+  | {
+      id: string
+      kind: 'result'
+      columns: Column[]
+      hasMore: boolean
+      groupId?: string
+    }
 
 export type FlowNodeKind = FlowNode['kind']
 

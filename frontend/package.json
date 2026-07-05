@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:wasm": "wasm-pack build ../wasm-api --target web --out-dir ../frontend/src/wasm/pkg"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.1",

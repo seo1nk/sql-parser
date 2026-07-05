@@ -99,6 +99,7 @@ export const mockFlowGraph: FlowGraph = {
         { name: 'name', role: 'output' },
         { name: 'order_count', role: 'output' },
       ],
+      hasMore: false,
     },
   ],
   edges: [

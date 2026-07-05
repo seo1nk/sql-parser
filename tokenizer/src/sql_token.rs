@@ -67,13 +67,15 @@ pub enum SqlKeyword {
     With,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum SqlNumber {
     Integer(i64),
     Float(f64),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum SqlValue {
     Number(SqlNumber),
     String(String), // 'hello world'

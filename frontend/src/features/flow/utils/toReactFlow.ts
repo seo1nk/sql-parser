@@ -62,6 +62,37 @@ export function toReactFlow(graph: FlowGraph): {
             isHighlighted: false,
           },
         }
+      case 'sort':
+        return {
+          id: n.id,
+          type: 'step',
+          position,
+          data: {
+            kind: 'sort',
+            title: 'ORDER BY',
+            body: n.keys.join(', '),
+            stepNo,
+            isHighlighted: false,
+          },
+        }
+      case 'slice':
+        return {
+          id: n.id,
+          type: 'step',
+          position,
+          data: {
+            kind: 'slice',
+            title: 'LIMIT / OFFSET',
+            body: [
+              n.limit != null ? `LIMIT ${n.limit}` : null,
+              n.offset != null ? `OFFSET ${n.offset}` : null,
+            ]
+              .filter(Boolean)
+              .join(' '),
+            stepNo,
+            isHighlighted: false,
+          },
+        }
       case 'result':
         return {
           id: n.id,
@@ -71,7 +102,7 @@ export function toReactFlow(graph: FlowGraph): {
             kind: 'result',
             title: '結果',
             columns: n.columns,
-            hasMore: false,
+            hasMore: n.hasMore,
             stepNo,
             isHighlighted: false,
           },

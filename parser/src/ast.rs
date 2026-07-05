@@ -1,7 +1,8 @@
 use tokenizer::sql_token::SqlValue;
 
 /// クエリ全体(WITH + 本体 + 集合演算)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Query {
     pub with: Vec<Cte>,
     pub body: SelectBody,
@@ -9,13 +10,15 @@ pub struct Query {
 }
 
 /// WITH で定義される共通テーブル式
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Cte {
     pub name: String,
     pub query: Query,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum SetOperator {
     Union,
     Intersect,
@@ -25,7 +28,8 @@ pub enum SetOperator {
 /// SELECT 文の本体
 /// 句の出現順(FROM-first でも SELECT-first でも)に依存しない、
 /// 論理評価順の正規形で保持する。この並びがそのまま可視化のステップ列になる
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectBody {
     /// 1. 集合の形成
     pub from: Vec<TableExpr>,
@@ -46,27 +50,31 @@ pub struct SelectBody {
     pub offset: Option<u64>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum SelectList {
     /// `SELECT *`(SELECT 句の省略もこれ)
     Wildcard,
     Items(Vec<SelectItem>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectItem {
     pub expr: Expr,
     pub alias: Option<String>,
 }
 
 /// FROM の1要素(テーブル + そこに連なる JOIN の列)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TableExpr {
     pub primary: TablePrimary,
     pub joins: Vec<Join>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum TablePrimary {
     /// 実テーブルまたは CTE 名
     Table {
@@ -81,10 +89,11 @@ pub enum TablePrimary {
 }
 
 /// `users` や `public.users` のような(修飾されうる)名前
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ObjectName(pub Vec<String>);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Join {
     pub join_type: JoinType,
     pub table: TablePrimary,
@@ -92,7 +101,8 @@ pub struct Join {
     pub on: Option<Expr>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum JoinType {
     Inner,
     Left,
@@ -101,7 +111,8 @@ pub enum JoinType {
     Cross,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct OrderItem {
     pub expr: Expr,
     /// ASC = Some(true) / DESC = Some(false) / 指定なし = None
@@ -109,7 +120,8 @@ pub struct OrderItem {
 }
 
 /// 式。優先順位はパーサー(expr.rs)が解決し、AST は木構造で保持する
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum Expr {
     Value(SqlValue),
     Column(ObjectName),
@@ -156,20 +168,23 @@ pub enum Expr {
     },
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum FunctionArgs {
     /// `count(*)`
     Wildcard,
     List(Vec<Expr>),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum UnaryOp {
     Not,
     Minus,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum BinaryOp {
     Or,
     And,
