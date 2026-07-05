@@ -63,12 +63,24 @@ export function SqlPane({ sql, onChange, error }: Props) {
           </div>
         ))}
       </div>
-      <p className="mt-auto mb-4 border-t-2 border-pane-border px-4 pt-3 text-[11.5px] leading-[1.8] text-ink-dim">
+      <p className="mt-auto border-t-2 border-pane-border px-4 pt-3 text-[11.5px] leading-[1.8] text-ink-dim">
         列は SQL に現れた事実のみ表示し、それ以外の列の存在は
         <b className="font-bold text-ink-muted"> … </b>で示します。
         <span className="font-bold text-accent-ink">ピンク</span> =
         最終結果に値が届く列 / グレー = 条件にのみ使われる列。 フローの並び =
         論理実行順なので、読解だけでなくチューニングの検討にも使えます。
+      </p>
+      <p className="mt-2 mb-4 px-4 text-[11px] text-ink-dim">
+        可視化のインタラクションは{' '}
+        <a
+          href="https://github.com/liam-hq/liam"
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-ink-muted underline decoration-pane-border underline-offset-2 transition-colors hover:text-accent-ink hover:decoration-accent"
+        >
+          Liam ERD
+        </a>{' '}
+        (Apache-2.0, © ROUTE06, Inc.) を参考にしています
       </p>
     </aside>
   )
