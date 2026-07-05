@@ -1,5 +1,5 @@
 /**
- * SQL Flow を kseo.ink/works/sql-flow* で配信する静的アセットのみのワーカー。
+ * SQL Visualizer を kseo.ink/works/sql-visualizer* で配信する静的アセットのみのワーカー。
  * asobi(kseo.ink 本体)とは独立にデプロイする。
  *
  * デプロイ: pnpm run deploy:works
@@ -11,7 +11,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "sql-flow",
+  "name": "sql-visualizer",
   "compatibility_date": "2026-07-01",
   "workers_dev": false,
   "assets": {
@@ -19,7 +19,7 @@
   },
   "routes": [
     {
-      "pattern": "kseo.ink/works/sql-flow*",
+      "pattern": "kseo.ink/works/sql-visualizer*",
       "zone_name": "kseo.ink",
     },
   ],

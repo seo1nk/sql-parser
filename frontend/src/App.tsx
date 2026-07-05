@@ -59,7 +59,7 @@ export default function App() {
         <header className="flex shrink-0 items-center gap-3 border-b-2 border-pane-border bg-pane px-5 py-3">
           <span className="size-3 rounded-full bg-accent" aria-hidden />
           <h1 className="text-[15px] font-extrabold tracking-wide">
-            SQL Flow
+            SQL Visualizer
           </h1>
           <span className="ml-auto text-xs font-medium text-ink-dim">
             SQL を編集するとフローが更新されます
