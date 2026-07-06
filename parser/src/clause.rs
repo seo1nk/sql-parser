@@ -1,5 +1,5 @@
 use kernel::combinator::{many1, optional, sep_by1};
-use kernel::parser::{Alternative, Parser};
+use kernel::parser::{Alternative, Applicative, Functor, Parser, RightFunctor};
 use tokenizer::sql_token::{SqlKeyword, SqlNumber, SqlValue};
 
 use crate::ast::{OrderItem, SelectBody, SelectItem, SelectList, TableExpr};
@@ -99,25 +99,22 @@ fn select_clause() -> TokenParser<Clause> {
     Parser(Box::new(|input: TokenStream| {
         let ((), rest) = keyword(SqlKeyword::Select).run(input)?;
         let (distinct, rest) = optional(keyword(SqlKeyword::Distinct)).run(rest)?;
-        let distinct = distinct.is_some();
-        if let Some(((), next)) = operator("*").run(rest.clone()) {
-            return Some((
-                Clause::Select {
-                    distinct,
-                    list: SelectList::Wildcard,
-                },
-                next,
-            ));
-        }
-        let (items, rest) = sep_by1(select_item(), delimiter(',')).run(rest)?;
+        let (list, rest) = select_list().run(rest)?;
         Some((
             Clause::Select {
-                distinct,
-                list: SelectList::Items(items),
+                distinct: distinct.is_some(),
+                list,
             },
             rest,
         ))
     }))
+}
+
+/// `*` または選択項目のリスト
+fn select_list() -> TokenParser<SelectList> {
+    operator("*")
+        .replace_with(SelectList::Wildcard)
+        .alt(sep_by1(select_item(), delimiter(',')).map(SelectList::Items))
 }
 
 /// expr [[AS] alias]
@@ -186,26 +183,17 @@ fn order_by_clause() -> TokenParser<Clause> {
 fn order_item() -> TokenParser<OrderItem> {
     Parser(Box::new(|input: TokenStream| {
         let (e, rest) = expr().run(input)?;
-        if let Some(((), next)) = keyword(SqlKeyword::Asc).run(rest.clone()) {
-            return Some((
-                OrderItem {
-                    expr: e,
-                    asc: Some(true),
-                },
-                next,
-            ));
-        }
-        if let Some(((), next)) = keyword(SqlKeyword::Desc).run(rest.clone()) {
-            return Some((
-                OrderItem {
-                    expr: e,
-                    asc: Some(false),
-                },
-                next,
-            ));
-        }
-        Some((OrderItem { expr: e, asc: None }, rest))
+        let (asc, rest) = direction().run(rest)?;
+        Some((OrderItem { expr: e, asc }, rest))
     }))
+}
+
+/// ソート方向: ASC | DESC | 指定なし(None)
+fn direction() -> TokenParser<Option<bool>> {
+    keyword(SqlKeyword::Asc)
+        .replace_with(Some(true))
+        .alt(keyword(SqlKeyword::Desc).replace_with(Some(false)))
+        .alt(Applicative::pure(None))
 }
 
 /// LIMIT n

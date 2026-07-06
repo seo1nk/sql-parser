@@ -1,5 +1,5 @@
 use kernel::combinator::{optional, sep_by1};
-use kernel::parser::Parser;
+use kernel::parser::{Alternative, Parser, RightFunctor};
 use tokenizer::sql_token::SqlKeyword;
 
 use crate::ast::{Cte, Query, SetOperator};
@@ -13,27 +13,12 @@ pub fn query() -> TokenParser<Query> {
         let (with, rest) = optional(with_clause()).run(input)?;
         let (body, mut rest) = select_body().run(rest)?;
 
+        // 集合演算は「演算子 + 本体」の左結合の並び
         let mut set_ops = Vec::new();
-        loop {
-            let matched = [
-                (SqlKeyword::Union, SetOperator::Union),
-                (SqlKeyword::Intersect, SetOperator::Intersect),
-                (SqlKeyword::Except, SetOperator::Except),
-            ]
-            .into_iter()
-            .find_map(|(kw, op)| {
-                keyword(kw)
-                    .run(rest.clone())
-                    .map(|((), next)| (op, next))
-            });
-            match matched {
-                Some((op, next)) => {
-                    let (right, next) = select_body().run(next)?;
-                    set_ops.push((op, right));
-                    rest = next;
-                }
-                None => break,
-            }
+        while let Some((op, next)) = set_operator().run(rest.clone()) {
+            let (right, next) = select_body().run(next)?;
+            set_ops.push((op, right));
+            rest = next;
         }
 
         Some((
@@ -45,6 +30,14 @@ pub fn query() -> TokenParser<Query> {
             rest,
         ))
     }))
+}
+
+/// UNION | INTERSECT | EXCEPT
+fn set_operator() -> TokenParser<SetOperator> {
+    keyword(SqlKeyword::Union)
+        .replace_with(SetOperator::Union)
+        .alt(keyword(SqlKeyword::Intersect).replace_with(SetOperator::Intersect))
+        .alt(keyword(SqlKeyword::Except).replace_with(SetOperator::Except))
 }
 
 /// WITH cte, cte, ...

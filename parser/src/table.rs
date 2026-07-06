@@ -51,26 +51,29 @@ fn join() -> TokenParser<Join> {
     Parser(Box::new(|input: TokenStream| {
         let (join_type, rest) = join_type().run(input)?;
         let (table, rest) = table_primary().run(rest)?;
-        if join_type == JoinType::Cross {
-            return Some((
+        match join_type {
+            // CROSS JOIN だけ ON を持たない
+            JoinType::Cross => Some((
                 Join {
                     join_type,
                     table,
                     on: None,
                 },
                 rest,
-            ));
+            )),
+            _ => {
+                let ((), rest) = keyword(SqlKeyword::On).run(rest)?;
+                let (on, rest) = expr().run(rest)?;
+                Some((
+                    Join {
+                        join_type,
+                        table,
+                        on: Some(on),
+                    },
+                    rest,
+                ))
+            }
         }
-        let ((), rest) = keyword(SqlKeyword::On).run(rest)?;
-        let (on, rest) = expr().run(rest)?;
-        Some((
-            Join {
-                join_type,
-                table,
-                on: Some(on),
-            },
-            rest,
-        ))
     }))
 }
 

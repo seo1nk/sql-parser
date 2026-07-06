@@ -44,30 +44,31 @@ fn binary_chain(
     }))
 }
 
-/// OR(優先度最低)
-fn or_expr() -> TokenParser<Expr> {
-    Parser(Box::new(|input: TokenStream| {
-        let (mut left, mut rest) = and_expr().run(input)?;
-        while let Some(((), next)) = keyword(SqlKeyword::Or).run(rest.clone()) {
-            let (right, next) = and_expr().run(next)?;
-            left = binary(left, BinaryOp::Or, right);
+/// キーワード演算子(OR / AND)による左結合の並び(binary_chain のキーワード版)
+fn keyword_chain(
+    operand: fn() -> TokenParser<Expr>,
+    kw: SqlKeyword,
+    op: BinaryOp,
+) -> TokenParser<Expr> {
+    Parser(Box::new(move |input: TokenStream| {
+        let (mut left, mut rest) = operand().run(input)?;
+        while let Some(((), next)) = keyword(kw.clone()).run(rest.clone()) {
+            let (right, next) = operand().run(next)?;
+            left = binary(left, op, right);
             rest = next;
         }
         Some((left, rest))
     }))
 }
 
+/// OR(優先度最低)
+fn or_expr() -> TokenParser<Expr> {
+    keyword_chain(and_expr, SqlKeyword::Or, BinaryOp::Or)
+}
+
 /// AND
 fn and_expr() -> TokenParser<Expr> {
-    Parser(Box::new(|input: TokenStream| {
-        let (mut left, mut rest) = not_expr().run(input)?;
-        while let Some(((), next)) = keyword(SqlKeyword::And).run(rest.clone()) {
-            let (right, next) = not_expr().run(next)?;
-            left = binary(left, BinaryOp::And, right);
-            rest = next;
-        }
-        Some((left, rest))
-    }))
+    keyword_chain(not_expr, SqlKeyword::And, BinaryOp::And)
 }
 
 /// NOT(単項)
@@ -115,16 +116,17 @@ fn comparison() -> TokenParser<Expr> {
         if let Some(((), next)) = keyword(SqlKeyword::Is).run(rest.clone()) {
             let (not, next) = optional(keyword(SqlKeyword::Not)).run(next)?;
             let (v, next) = value().run(next)?;
-            if v != SqlValue::Null {
-                return None;
-            }
-            return Some((
-                Expr::IsNull {
-                    expr: Box::new(left),
-                    negated: not.is_some(),
-                },
-                next,
-            ));
+            return match v {
+                SqlValue::Null => Some((
+                    Expr::IsNull {
+                        expr: Box::new(left),
+                        negated: not.is_some(),
+                    },
+                    next,
+                )),
+                // IS の後ろに置けるのは NULL のみ
+                _ => None,
+            };
         }
 
         // [NOT] IN / LIKE / BETWEEN
@@ -252,44 +254,43 @@ fn primary() -> TokenParser<Expr> {
             return Some((inner, rest));
         }
 
-        // 関数呼び出し or 列参照
+        // 関数呼び出し or 列参照:
+        // 「単一の識別子 + `(`」のときだけ関数呼び出し(関数名は修飾できない)
         let (name, rest) = object_name().run(input)?;
-        if name.0.len() == 1
-            && let Some(((), after_paren)) = delimiter('(').run(rest.clone()) {
-                let function_name = name.0[0].clone();
-                // count(*)
-                if let Some(((), next)) = operator("*").run(after_paren.clone()) {
-                    let ((), next) = delimiter(')').run(next)?;
-                    return Some((
+        match (name.0.as_slice(), delimiter('(').run(rest.clone())) {
+            ([function_name], Some(((), after_paren))) => {
+                let function_name = function_name.clone();
+                function_args().run(after_paren).map(|(args, next)| {
+                    (
                         Expr::Function {
                             name: function_name,
-                            args: FunctionArgs::Wildcard,
+                            args,
                         },
                         next,
-                    ));
-                }
-                // 引数なし f()
-                if let Some(((), next)) = delimiter(')').run(after_paren.clone()) {
-                    return Some((
-                        Expr::Function {
-                            name: function_name,
-                            args: FunctionArgs::List(vec![]),
-                        },
-                        next,
-                    ));
-                }
-                // f(a, b, ...)
-                let (args, next) = sep_by1(expr(), delimiter(',')).run(after_paren)?;
-                let ((), next) = delimiter(')').run(next)?;
-                return Some((
-                    Expr::Function {
-                        name: function_name,
-                        args: FunctionArgs::List(args),
-                    },
-                    next,
-                ));
+                    )
+                })
             }
-        Some((Expr::Column(name), rest))
+            _ => Some((Expr::Column(name), rest)),
+        }
+    }))
+}
+
+/// 関数呼び出しの引数(開き括弧の後ろから閉じ括弧まで): `*)` | `)` | `a, b, ...)`
+fn function_args() -> TokenParser<FunctionArgs> {
+    Parser(Box::new(|input: TokenStream| {
+        // count(*) のワイルドカード
+        if let Some(((), rest)) = operator("*").run(input.clone()) {
+            let ((), rest) = delimiter(')').run(rest)?;
+            return Some((FunctionArgs::Wildcard, rest));
+        }
+        // 引数なし f()
+        if let Some(((), rest)) = delimiter(')').run(input.clone()) {
+            return Some((FunctionArgs::List(vec![]), rest));
+        }
+        // f(a, b, ...)
+        let (args, rest) = sep_by1(expr(), delimiter(',')).run(input)?;
+        let ((), rest) = delimiter(')').run(rest)?;
+        Some((FunctionArgs::List(args), rest))
     }))
 }
 

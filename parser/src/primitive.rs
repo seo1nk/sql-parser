@@ -1,4 +1,5 @@
-use kernel::parser::{Functor, Parser};
+use kernel::combinator::optional;
+use kernel::parser::{Functor, Monad, Parser};
 use tokenizer::sql_token::{SqlKeyword, SqlValue, Token};
 
 use crate::token_stream::TokenStream;
@@ -55,16 +56,10 @@ pub fn value() -> TokenParser<SqlValue> {
 
 /// テーブルや選択列の別名 `[AS] identifier` をパースする。なければ None で成功する
 pub fn alias() -> TokenParser<Option<String>> {
-    Parser(Box::new(|input: TokenStream| {
+    optional(keyword(SqlKeyword::As)).and_then(|as_keyword| match as_keyword {
         // AS があれば識別子が必須
-        if let Some(((), rest)) = keyword(SqlKeyword::As).run(input.clone()) {
-            let (name, rest) = identifier().run(rest)?;
-            return Some((Some(name), rest));
-        }
-        // AS なしの裸の別名(`FROM users u` の u)
-        match identifier().run(input.clone()) {
-            Some((name, rest)) => Some((Some(name), rest)),
-            None => Some((None, input)),
-        }
-    }))
+        Some(()) => identifier().map(Some),
+        // AS なしの裸の別名(`FROM users u` の u)は任意
+        None => optional(identifier()),
+    })
 }
