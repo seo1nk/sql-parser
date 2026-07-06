@@ -2,22 +2,19 @@ import {
   Background,
   BackgroundVariant,
   ReactFlow,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
   type EdgeTypes,
   type NodeTypes,
 } from '@xyflow/react'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { FlowGraph } from '../../../types/flow'
-import type { RfEdge, RfNode } from '../types'
+import { useFlowLayout } from '../hooks/useFlowLayout'
+import { useUpstreamHighlight } from '../hooks/useUpstreamHighlight'
 import {
   collectUpstream,
   highlightEdges,
   highlightNodes,
 } from '../utils/highlight'
-import { addGroupBoxes, applyElkLayout } from '../utils/layout'
-import { toReactFlow } from '../utils/toReactFlow'
 import { FlowEdge } from './FlowEdge'
 import { GroupBoxNode } from './GroupBoxNode'
 import { StepNode } from './StepNode'
@@ -34,58 +31,43 @@ const edgeTypes: EdgeTypes = {
 }
 
 type Props = {
-  /** WASM の explain() が返したフローグラフ。null は初期ロード中 */
+  /** explain() が返したフローグラフ。null は初期ロード中 */
   graph: FlowGraph | null
 }
 
-/** フローキャンバスと実行順タイムライン。ReactFlowProvider の内側で使うこと */
+/**
+ * フローキャンバスと実行順タイムライン。ReactFlowProvider の内側で使うこと
+ *
+ * 状態は「レイアウト済みノード(useFlowLayout)」と
+ * 「ハイライト起点(useUpstreamHighlight)」の2つだけで、
+ * 実際に描画するノード/エッジはそこからの純粋な導出(useMemo)にしている
+ */
 export function FlowArea({ graph }: Props) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<RfNode>([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState<RfEdge>([])
+  const { nodes, edges, onNodesChange, onEdgesChange } = useFlowLayout(graph)
+  const { activeIds, highlight } = useUpstreamHighlight(graph)
   const { fitView } = useReactFlow()
-  // ハイライト計算・古い非同期レイアウト結果の破棄に使う
-  const graphRef = useRef<FlowGraph | null>(null)
 
-  // FlowGraph → React Flow 変換 → ELK レイアウト → グループ枠追加
-  useEffect(() => {
-    if (!graph) return
-    graphRef.current = graph
-    ;(async () => {
-      const { nodes: rawNodes, edges: rawEdges } = toReactFlow(graph)
-      const laidOut = await applyElkLayout(rawNodes, rawEdges)
-      // レイアウト中に新しいグラフが来ていたら捨てる
-      if (graphRef.current !== graph) return
-      const withBoxes = addGroupBoxes(graph, laidOut)
-      setNodes(highlightNodes(withBoxes, null))
-      setEdges(highlightEdges(rawEdges, null))
-      requestAnimationFrame(() => fitView({ padding: 0.1 }))
-    })()
-  }, [graph, setNodes, setEdges, fitView])
-
-  // 指定ノード(とその上流経路)をハイライトする。null で解除
-  const highlight = useCallback(
-    (seedIds: string[] | null) => {
-      const current = graphRef.current
-      if (!current) return
-      const active = seedIds ? collectUpstream(current.edges, seedIds) : null
-      setNodes((nodes) => highlightNodes(nodes, active))
-      setEdges((edges) => highlightEdges(edges, active))
-    },
-    [setNodes, setEdges],
+  // UI = f(レイアウト済みノード, ハイライト状態)
+  const displayNodes = useMemo(
+    () => highlightNodes(nodes, activeIds),
+    [nodes, activeIds],
+  )
+  const displayEdges = useMemo(
+    () => highlightEdges(edges, activeIds),
+    [edges, activeIds],
   )
 
   const focusStep = useCallback(
     (nodeIds: string[]) => {
-      const current = graphRef.current
-      if (!current) return
-      const targets = collectUpstream(current.edges, nodeIds)
+      if (!graph) return
+      const targets = collectUpstream(graph.edges, nodeIds)
       fitView({
         nodes: [...targets].map((id) => ({ id })),
         padding: 0.3,
         duration: 400,
       })
     },
-    [fitView],
+    [graph, fitView],
   )
 
   return (
@@ -93,8 +75,8 @@ export function FlowArea({ graph }: Props) {
       <div className="min-h-0 flex-1">
         <ReactFlow
           colorMode="light"
-          nodes={nodes}
-          edges={edges}
+          nodes={displayNodes}
+          edges={displayEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}

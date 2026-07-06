@@ -1,10 +1,9 @@
 import { Tooltip } from '@base-ui-components/react/tooltip'
 import { ReactFlowProvider } from '@xyflow/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { SqlPane } from './components/SqlPane'
 import { FlowArea } from './features/flow/components/FlowArea'
-import type { FlowGraph } from './types/flow'
-import { explainSql } from './wasm/api'
+import { useExplainedGraph } from './hooks/useExplainedGraph'
 
 const INITIAL_SQL = `WITH adults AS (
   FROM users
@@ -20,38 +19,13 @@ SELECT a.name,
   count(o.id) AS order_count
 -- SELECT が先頭でなくても書ける`
 
+/**
+ * アプリの根本状態は「SQL 文字列」だけ。
+ * グラフとエラーは useExplainedGraph が SQL から導出する
+ */
 export default function App() {
   const [sql, setSql] = useState(INITIAL_SQL)
-  const [graph, setGraph] = useState<FlowGraph | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  // 入力が落ち着いてから WASM の explain() でフローグラフに変換する
-  useEffect(() => {
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      try {
-        const result = await explainSql(sql)
-        if (cancelled) return
-        if (result.ok) {
-          setGraph(result.graph)
-          setError(null)
-        } else {
-          // 失敗時は直前の正常なグラフを残したままエラーを表示する
-          setError(result.error)
-        }
-      } catch (cause) {
-        // WASM の読み込み失敗など、パース以前の例外もエラー表示に落とす
-        console.error(cause)
-        if (!cancelled) {
-          setError('うまく動きませんでした。ページを再読み込みしてみてください。')
-        }
-      }
-    }, 300)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [sql])
+  const { graph, error } = useExplainedGraph(sql)
 
   return (
     <Tooltip.Provider>
